@@ -1,0 +1,120 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Container from "../components/ui/Container.astro";
+import PageHero from "../components/ui/PageHero.astro";
+import Button from "../components/ui/Button.astro";
+import { site } from "../lib/site";
+
+const contactRows = [
+  { label: "Maryland", value: "11813 Charen Lane, Potomac, MD 20854" },
+  { label: "Washington, DC", value: "1629 K St, Washington, DC 20006" },
+  { label: "Telephone", value: "301-494-1116 · 240-384-8999" },
+  { label: "Fax", value: "240-528-8972 · 1-888-872-7931 (toll-free)" },
+  { label: "Email", value: site.email, href: `mailto:${site.email}` },
+];
+
+const mapSrc =
+  "https://www.google.com/maps?q=11813+Charen+Lane,+Potomac,+MD+20854&z=12&output=embed";
+const formAction = `https://formspree.io/f/${site.formspreeId}`;
+---
+
+<BaseLayout
+  title="Contact"
+  description="Reach Crystal Care Nursing in Potomac, MD and Washington, DC. Call, email, or send us a message about home health care."
+>
+  <PageHero eyebrow="We're here to help" title="Contact us today" />
+
+  <section class="py-16 sm:py-24">
+    <Container size="wide">
+      <div class="grid gap-12 lg:grid-cols-2 lg:gap-16">
+        <!-- Details + map -->
+        <div data-animate="fade-up">
+          <h2 class="font-display text-3xl font-light text-deep sm:text-4xl">
+            Let's talk about care
+          </h2>
+          <p class="mt-4 max-w-md text-base leading-relaxed text-muted">
+            Have a question or ready to start? Reach us any time — our team will
+            help you find the right care for your situation.
+          </p>
+
+          <dl class="mt-8 divide-y divide-deep/10 border-y border-deep/10">
+            {contactRows.map((r) => (
+              <div class="flex flex-col gap-1 py-4 sm:flex-row sm:gap-6">
+                <dt class="w-40 flex-shrink-0 text-xs font-semibold uppercase tracking-[0.14em] text-brand">
+                  {r.label}
+                </dt>
+                <dd class="text-[0.95rem] text-ink">
+                  {r.href ? (
+                    <a href={r.href} class="font-medium text-brand hover:underline">{r.value}</a>
+                  ) : (
+                    r.value
+                  )}
+                </dd>
+              </div>
+            ))}
+          </dl>
+
+          <div class="mt-8 overflow-hidden rounded-2xl border border-deep/10 shadow-soft">
+            <iframe
+              src={mapSrc}
+              title="Map of Crystal Care Nursing, Potomac, Maryland"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              class="h-72 w-full border-0"
+            ></iframe>
+          </div>
+        </div>
+
+        <!-- Form -->
+        <div class="cn-card p-7 sm:p-9" data-animate="fade-up">
+          <h2 class="font-display text-2xl font-normal text-deep">Send a message</h2>
+          <p class="mt-2 text-sm text-muted">
+            We typically respond within one business day.
+          </p>
+
+          <form action={formAction} method="POST" class="mt-6 space-y-5">
+            <input type="hidden" name="_subject" value="New message from crystalnurse.com" />
+            <div>
+              <label for="name" class="mb-1.5 block text-sm font-medium text-ink">Name</label>
+              <input
+                type="text" id="name" name="name" required autocomplete="name"
+                placeholder="Your name"
+                class="w-full rounded-xl border border-deep/15 bg-white px-4 py-3 text-ink placeholder:text-muted/60 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
+              />
+            </div>
+            <div>
+              <label for="email" class="mb-1.5 block text-sm font-medium text-ink">Email</label>
+              <input
+                type="email" id="email" name="email" required autocomplete="email"
+                placeholder="you@example.com"
+                class="w-full rounded-xl border border-deep/15 bg-white px-4 py-3 text-ink placeholder:text-muted/60 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
+              />
+            </div>
+            <div>
+              <label for="phone" class="mb-1.5 block text-sm font-medium text-ink">Phone <span class="font-normal text-muted">(optional)</span></label>
+              <input
+                type="tel" id="phone" name="phone" autocomplete="tel"
+                placeholder="(000) 000-0000"
+                class="w-full rounded-xl border border-deep/15 bg-white px-4 py-3 text-ink placeholder:text-muted/60 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
+              />
+            </div>
+            <div>
+              <label for="message" class="mb-1.5 block text-sm font-medium text-ink">Message</label>
+              <textarea
+                id="message" name="message" rows="5" required maxlength="5000"
+                placeholder="How can we help?"
+                class="w-full rounded-xl border border-deep/15 bg-white px-4 py-3 text-ink placeholder:text-muted/60 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
+              ></textarea>
+            </div>
+            <Button type="submit" variant="primary" size="lg" class="w-full">
+              Send message
+            </Button>
+            <p class="text-center text-xs text-muted">
+              Prefer to call? <a href={site.phone.href} class="font-semibold text-brand">{site.phone.display}</a>
+            </p>
+          </form>
+        </div>
+      </div>
+    </Container>
+  </section>
+</BaseLayout>

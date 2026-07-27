@@ -1,0 +1,87 @@
+---
+import Container from "../ui/Container.astro";
+import PulseLine from "../ui/PulseLine.astro";
+import { asset } from "../../lib/asset";
+import { site, navLinks, resourceLinks, offices } from "../../lib/site";
+---
+
+<footer class="mt-24 bg-deep text-white/80 sm:mt-32">
+  <Container size="wide" class="py-16">
+    <div class="grid gap-12 md:grid-cols-[1.4fr_1fr_1fr]">
+      <!-- Brand / about -->
+      <div>
+        <img
+          src={asset("/images/logo.png")}
+          alt={site.name}
+          class="h-10 w-auto brightness-0 invert"
+        />
+        <p class="mt-5 max-w-sm text-sm leading-relaxed text-white/70">
+          {site.legalName} provides skilled and non-skilled care in the home —
+          from medication reminders and personal care to grooming, dressing,
+          shopping, and housekeeping — promoting your independence where you are
+          most comfortable.
+        </p>
+        <PulseLine class="mt-6 h-5 w-32 opacity-80" color="#6FB7DC" />
+        <p class="mt-6 text-xs uppercase tracking-[0.14em] text-white/50">
+          {site.license}
+        </p>
+      </div>
+
+      <!-- Explore -->
+      <div>
+        <h2 class="font-body text-xs font-semibold uppercase tracking-[0.18em] text-sky">
+          Explore
+        </h2>
+        <ul class="mt-5 space-y-3 text-sm">
+          {navLinks.map((l) => (
+            <li>
+              <a
+                href={l.href}
+                class="text-white/70 hover:text-white"
+                {...(l.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+              >
+                {l.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <!-- Trusted resources -->
+      <div>
+        <h2 class="font-body text-xs font-semibold uppercase tracking-[0.18em] text-sky">
+          Trusted Resources
+        </h2>
+        <ul class="mt-5 space-y-3 text-sm">
+          {resourceLinks.map((l) => (
+            <li>
+              <a
+                href={l.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-white/70 hover:text-white"
+              >
+                {l.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+        <p class="mt-6 text-xs leading-relaxed text-white/50">
+          For public-health guidance, rely on official sources like the CDC and
+          be mindful of misinformation online.
+        </p>
+      </div>
+    </div>
+
+    <div
+      class="mt-14 flex flex-col gap-4 border-t border-white/10 pt-8 text-sm text-white/60 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <p>© {site.established}–2026 {site.legalName}. All rights reserved.</p>
+      <p class="flex flex-wrap gap-x-6 gap-y-1">
+        {offices.map((o) => (
+          <span>{o.region}: {o.lines.join(", ")}</span>
+        ))}
+      </p>
+    </div>
+  </Container>
+</footer>

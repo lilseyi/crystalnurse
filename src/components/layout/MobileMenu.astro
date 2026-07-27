@@ -1,0 +1,51 @@
+---
+import Button from "../ui/Button.astro";
+import { asset } from "../../lib/asset";
+import { site, navLinks } from "../../lib/site";
+---
+
+<div
+  id="mobile-menu-panel"
+  data-mobile-menu-panel
+  aria-hidden="true"
+  class="fixed inset-0 z-40 flex translate-x-full flex-col bg-paper transition-transform duration-200 ease-out lg:hidden"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Menu"
+>
+  <div class="flex items-center justify-between border-b border-deep/10 px-5 py-3.5">
+    <img src={asset("/images/logo.png")} alt={site.name} class="h-10 w-auto" />
+    <button
+      type="button"
+      data-mobile-menu-close
+      aria-label="Close menu"
+      class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-deep/20 text-deep"
+    >
+      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <nav class="flex-1 overflow-y-auto px-5 py-8" aria-label="Mobile">
+    <ul class="flex flex-col gap-2">
+      {navLinks.map((l) => (
+        <li>
+          <a
+            href={l.href}
+            class="block rounded-xl py-3 font-display text-2xl font-light text-deep hover:text-brand"
+            {...(l.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+          >
+            {l.label}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </nav>
+
+  <div class="border-t border-deep/10 px-5 py-6">
+    <Button href={site.phone.href} variant="primary" class="w-full">
+      Call {site.phone.display}
+    </Button>
+  </div>
+</div>

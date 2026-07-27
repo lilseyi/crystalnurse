@@ -1,0 +1,81 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Container from "../components/ui/Container.astro";
+import SectionHeading from "../components/ui/SectionHeading.astro";
+import PageHero from "../components/ui/PageHero.astro";
+import CallToAction from "../components/sections/CallToAction.astro";
+
+const skilledCare = [
+  "Medication teaching and monitoring",
+  "Evaluation and re-assessment",
+  "Blood pressure management",
+  "Diabetic monitoring",
+  "Wound care",
+  "Mobility assistance",
+];
+
+const nonSkilledCare = [
+  "Personal care",
+  "Medication reminders",
+  "Temporary care",
+  "Long-term care",
+  "Respite care & housekeeping",
+  "Medical appointments",
+  "CPR & First-Aid training",
+];
+---
+
+<BaseLayout
+  title="Services"
+  description="Skilled and non-skilled home health services from Crystal Care Nursing across the DC metro."
+>
+  <PageHero eyebrow="What we do" title="Our services" />
+
+  <section class="py-16 sm:py-24">
+    <Container size="wide">
+      <SectionHeading align="center" eyebrow="Our services" class="mx-auto" data-animate="fade-up">
+        Skilled and non-skilled care
+        <p slot="description">
+          As a home health care provider in the DC metro, Crystal Care
+          Nursing, LLC is a team of medical professionals working under a
+          licensed physician and administrator to meet the individual needs of
+          each patient. Our services include:
+        </p>
+      </SectionHeading>
+
+      <div class="mt-12 grid gap-6 lg:grid-cols-2">
+        <div class="cn-card p-8" data-animate="fade-up">
+          <h3 class="font-display text-2xl font-normal text-deep">Skilled care</h3>
+          <ul class="mt-6 grid gap-3">
+            {skilledCare.map((it) => (
+              <li class="flex items-start gap-3">
+                <svg class="mt-0.5 h-5 w-5 flex-shrink-0 text-brand" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <circle cx="10" cy="10" r="9" fill="currentColor" opacity="0.12"/>
+                  <path d="M6 10.5l2.5 2.5L14.5 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="text-[0.95rem] leading-relaxed text-ink">{it}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div class="cn-card p-8" data-animate="fade-up">
+          <h3 class="font-display text-2xl font-normal text-deep">Non-skilled care</h3>
+          <ul class="mt-6 grid gap-3">
+            {nonSkilledCare.map((it) => (
+              <li class="flex items-start gap-3">
+                <svg class="mt-0.5 h-5 w-5 flex-shrink-0 text-brand" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <circle cx="10" cy="10" r="9" fill="currentColor" opacity="0.12"/>
+                  <path d="M6 10.5l2.5 2.5L14.5 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="text-[0.95rem] leading-relaxed text-ink">{it}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </Container>
+  </section>
+
+  <CallToAction />
+</BaseLayout>

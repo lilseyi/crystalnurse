@@ -1,0 +1,89 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Container from "../components/ui/Container.astro";
+import PageHero from "../components/ui/PageHero.astro";
+import SectionHeading from "../components/ui/SectionHeading.astro";
+import CallToAction from "../components/sections/CallToAction.astro";
+
+const resources = [
+  {
+    name: "U.S. Department of Health & Human Services",
+    url: "https://www.hhs.gov",
+    display: "hhs.gov",
+  },
+  {
+    name: "National Institutes of Health",
+    url: "https://www.nih.gov",
+    display: "nih.gov",
+  },
+  {
+    name: "Centers for Disease Control",
+    url: "https://www.cdc.gov",
+    display: "cdc.gov",
+  },
+  {
+    name: "National Institute on Aging",
+    url: "https://www.nia.nih.gov",
+    display: "nia.nih.gov",
+  },
+  {
+    name: "Senior Cancer Guide",
+    url: "https://www.asbestos.com/cancer/senior-cancer-guide/",
+    display: "asbestos.com",
+  },
+  {
+    name: "Senior Mesothelioma Guide",
+    url: "https://www.asbestos.com/mesothelioma/",
+    display: "asbestos.com",
+  },
+];
+---
+
+<BaseLayout
+  title="Resources"
+  description="Trusted health and aging resources recommended by Crystal Care Nursing."
+>
+  <PageHero eyebrow="Helpful links" title="Resources" />
+
+  <section class="py-16 sm:py-24">
+    <Container size="wide">
+      <SectionHeading align="center" eyebrow="Links to useful resources" class="mx-auto">
+        Trusted health resources
+        <p slot="description">
+          Reliable information helps you make confident decisions about care.
+          These are trusted organizations we recommend for health, aging, and
+          public-health guidance.
+        </p>
+      </SectionHeading>
+
+      <div class="mt-12 grid gap-5 sm:grid-cols-2">
+        {resources.map((r) => (
+          <a
+            href={r.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="cn-card group flex flex-col p-6"
+            data-animate="fade-up"
+          >
+            <span class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-deep">
+              <svg class="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75" />
+                <path d="M3 12h18M12 3c2.5 2.5 3.75 5.75 3.75 9s-1.25 6.5-3.75 9c-2.5-2.5-3.75-5.75-3.75-9S9.5 5.5 12 3z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </span>
+            <h3 class="mt-5 font-display text-lg font-normal text-deep">{r.name}</h3>
+            <p class="mt-1.5 text-sm text-muted">{r.display}</p>
+            <span class="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand group-hover:gap-2.5 transition-all">
+              Visit site
+              <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M4 10h11M11 5l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+          </a>
+        ))}
+      </div>
+    </Container>
+  </section>
+
+  <CallToAction />
+</BaseLayout>

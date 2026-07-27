@@ -1,0 +1,41 @@
+---
+import Container from "./Container.astro";
+import PulseLine from "./PulseLine.astro";
+import { asset } from "../../lib/asset";
+
+// Shared hero band for inner pages: a photo darkened under a deep-blue wash,
+// an eyebrow, and a single large title. Keeps every inner page consistent.
+export interface Props {
+  title: string;
+  eyebrow?: string;
+  image?: string;
+}
+const { title, eyebrow, image = "/images/hero-inner.jpeg" } = Astro.props;
+---
+
+<section class="relative isolate overflow-hidden bg-deep">
+  <img
+    src={asset(image)}
+    alt=""
+    aria-hidden="true"
+    class="absolute inset-0 h-full w-full object-cover object-[50%_36%] opacity-40"
+  />
+  <div
+    class="absolute inset-0"
+    style="background: linear-gradient(105deg, rgba(15,74,92,0.92) 0%, rgba(15,74,92,0.72) 55%, rgba(28,127,168,0.55) 100%)"
+    aria-hidden="true"
+  >
+  </div>
+
+  <Container size="wide" class="relative py-20 sm:py-28">
+    <div class="max-w-2xl" data-animate="fade-up">
+      {eyebrow && (
+        <span class="cn-eyebrow !text-sky mb-4">{eyebrow}</span>
+      )}
+      <h1 class="font-display text-4xl font-light leading-[1.05] text-white sm:text-5xl md:text-6xl">
+        {title}
+      </h1>
+      <PulseLine class="mt-6 h-6 w-40 opacity-90" color="#E0855C" />
+    </div>
+  </Container>
+</section>

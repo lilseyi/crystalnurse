@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-paper font-body text-ink antialiased;
+    /* Faint warm wash from the top — keeps the page from reading flat white. */
+    background-image: radial-gradient(
+      120% 60% at 50% 0%,
+      rgba(28, 127, 168, 0.05) 0%,
+      transparent 55%
+    );
+    background-attachment: fixed;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display tracking-tight text-deep;
+    font-optical-sizing: auto;
+  }
+
+  a {
+    @apply transition-colors;
+  }
+
+  *:focus-visible {
+    @apply outline-none ring-2 ring-brand/70 ring-offset-2 ring-offset-paper rounded-sm;
+  }
+}
+
+@layer components {
+  /* Eyebrow label — utility caps in the body face, brand color, tracked out.
+   * Precedes a pulse mark (::before) that ties every section to the vitals motif. */
+  .cn-eyebrow {
+    @apply inline-flex items-center gap-2 font-body text-xs font-semibold uppercase
+           tracking-[0.18em] text-brand;
+  }
+  .cn-eyebrow::before {
+    content: "";
+    @apply inline-block h-2 w-2 rounded-full bg-care;
+    box-shadow: 0 0 0 4px rgba(224, 133, 92, 0.18);
+  }
+
+  /* Inline prose links (kept out of button anchors). */
+  .cn-prose a:not([class*="inline-flex"]) {
+    @apply font-medium text-brand underline decoration-brand/30 underline-offset-2
+           hover:decoration-brand;
+  }
+  .cn-prose p + p {
+    @apply mt-4;
+  }
+
+  /* Content card — white on warm paper, soft ring + lift on hover. */
+  .cn-card {
+    @apply rounded-2xl border border-deep/10 bg-white shadow-soft transition
+           duration-200;
+  }
+  .cn-card:hover {
+    @apply shadow-card -translate-y-0.5;
+  }
+}
+
+/* =================================================================
+   Signature: the pulse / heartbeat line.
+   An SVG polyline whose stroke "draws" once on load, echoing a vitals
+   monitor. Used prominently in the hero and as a quiet section divider.
+   ================================================================= */
+.cn-pulse path {
+  stroke-dasharray: 480;
+  stroke-dashoffset: 480;
+}
+.js-enabled .cn-pulse path {
+  animation: cn-draw 2.2s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+@keyframes cn-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* =================================================================
+   Scroll-triggered entrance animations.
+   Controller: src/scripts/scroll-animate.ts (IntersectionObserver).
+   Add data-animate="fade-up" on any element to opt in.
+   ================================================================= */
+[data-animate] {
+  --delay: 0ms;
+  transition-property: opacity, transform;
+  transition-duration: 700ms;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--delay);
+  will-change: opacity, transform;
+}
+.js-enabled [data-animate="fade-up"] {
+  opacity: 0;
+  transform: translate3d(0, 22px, 0);
+}
+.js-enabled [data-animate="fade-up"][data-animate-in] {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js-enabled .cn-pulse path {
+    animation: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+  [data-animate],
+  [data-animate][data-animate-in] {
+    transition: none !important;
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

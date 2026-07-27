@@ -1,0 +1,27 @@
+---
+// Signature motif: a heartbeat/vitals line. The stroke "draws" once on load
+// (see .cn-pulse in global.css). Used large in the hero and small as a divider.
+export interface Props {
+  class?: string;
+  /** Stroke color; defaults to the warm care accent. */
+  color?: string;
+  width?: number;
+}
+const { class: className = "", color = "#E0855C", width = 2.5 } = Astro.props;
+---
+
+<svg
+  class={`cn-pulse ${className}`}
+  viewBox="0 0 240 40"
+  fill="none"
+  aria-hidden="true"
+  preserveAspectRatio="none"
+>
+  <path
+    d="M0 20 H70 L82 20 L92 6 L104 34 L116 12 L126 20 L140 20 L150 26 L160 20 H240"
+    stroke={color}
+    stroke-width={width}
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  ></path>
+</svg>

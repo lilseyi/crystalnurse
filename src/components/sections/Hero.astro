@@ -1,0 +1,71 @@
+---
+import Container from "../ui/Container.astro";
+import Button from "../ui/Button.astro";
+import PulseLine from "../ui/PulseLine.astro";
+import { asset } from "../../lib/asset";
+import { site } from "../../lib/site";
+
+const trust = [
+  `Serving Maryland & Washington, DC`,
+  `Established ${site.established}`,
+  `Medicare, Medicaid & private insurance`,
+];
+---
+
+<section class="relative isolate overflow-hidden bg-deep">
+  <img
+    src={asset("/images/hero-home.jpeg")}
+    alt=""
+    aria-hidden="true"
+    class="absolute inset-0 h-full w-full object-cover object-center opacity-45"
+  />
+  <div
+    class="absolute inset-0"
+    style="background: linear-gradient(100deg, rgba(15,74,92,0.94) 0%, rgba(15,74,92,0.78) 48%, rgba(28,127,168,0.45) 100%)"
+    aria-hidden="true"
+  >
+  </div>
+
+  <Container size="wide" class="relative py-24 sm:py-32 lg:py-40">
+    <div class="max-w-2xl">
+      <span class="cn-eyebrow !text-sky">Skilled &amp; non-skilled home care</span>
+      <h1
+        class="mt-5 font-display text-5xl font-light leading-[1.02] text-white sm:text-6xl lg:text-7xl"
+      >
+        Nurses that <em class="font-normal not-italic text-sky">serve</em>
+      </h1>
+      <div class="mt-5 max-w-md">
+        <PulseLine class="h-8 w-full opacity-95" color="#E0855C" />
+      </div>
+      <p class="mt-6 max-w-lg text-lg leading-relaxed text-white/85 sm:text-xl">
+        Promoting your independence at home — with compassionate,
+        patient-centered care built around each person's needs.
+      </p>
+
+      <div class="mt-9 flex flex-col gap-3 sm:flex-row">
+        <Button href={site.phone.href} variant="care" size="lg">
+          Call {site.phone.display}
+        </Button>
+        <Button
+          href={asset("/about")}
+          variant="outline"
+          size="lg"
+          class="!border-white/40 !text-white hover:!border-white"
+        >
+          Learn more
+        </Button>
+      </div>
+
+      <ul class="mt-12 flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/70">
+        {trust.map((t) => (
+          <li class="flex items-center gap-2">
+            <svg class="h-4 w-4 flex-shrink-0 text-sky" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M4 10.5l4 4 8-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            {t}
+          </li>
+        ))}
+      </ul>
+    </div>
+  </Container>
+</section>
