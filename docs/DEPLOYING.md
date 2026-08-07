@@ -8,7 +8,7 @@ Everything ships on merge to `main`. Nothing needs a manual deploy.
 |---|---|---|
 | `ci.yml` | every PR | typecheck, lint, test, and both builds |
 | `deploy-convex.yml` | merge to main | backend deployed, then pending migrations run |
-| `deploy-admin.yml` | merge to main (portal files) | `admin.crystalnurse.com` |
+| `deploy-admin.yml` | merge to main (portal files) | `admin.crystalnurse.com` (EAS Hosting) |
 | `deploy-site.yml` | merge to main | `crystalnurse.com` |
 | `deploy-ops-update.yml` | disabled | phone-app updates, if native builds ever exist |
 
@@ -97,92 +97,44 @@ pnpm setup:secrets
 pnpm push:secrets --prod
 ```
 
-### admin.crystalnurse.com (Cloudflare Pages)
+### admin.crystalnurse.com (EAS Hosting)
 
-**Prerequisite: `crystalnurse.com` must be a Cloudflare zone.**
+The portal is an Expo app, so it's hosted by EAS: SPA routing works natively,
+and the same project handles native iOS/Android builds later without a move.
 
-This is not optional and not a preference. A Pages custom domain requires an
-active Cloudflare zone — pointing a CNAME at `*.pages.dev` from another DNS
-provider returns [Error 1001](https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-1xxx-errors/error-1001/)
-("a non-Cloudflare domain cannot CNAME to a Cloudflare domain"). The two setups
-that would avoid moving the zone are both out of reach on a free plan:
+**DNS stays exactly where it is.** A custom domain here is three records added
+at Squarespace — the zone is never transferred, and Google Workspace email is
+never in the blast radius. (Cloudflare Pages was the original plan and would
+have required moving the whole zone, because its free plan supports only a full
+setup. That trade is what ruled it out.)
 
-| Setup | Free | Pro | Business | Enterprise |
-|---|---|---|---|---|
-| Full (whole zone on Cloudflare) | ✅ | ✅ | ✅ | ✅ |
-| Partial / CNAME-only | ❌ | ❌ | ✅ | ✅ |
-| Subdomain-only zone (`admin.` alone) | ❌ | ❌ | ❌ | ✅ |
+Requires an Expo **Starter** plan or above; custom domains aren't on the free
+tier.
 
-So: either move the whole zone, or host the portal somewhere that works with
-external DNS (see "Not using Cloudflare" below).
-
-**The zone move — the careful order.** `crystalnurse.com` currently carries live
-Google Workspace email. Getting MX wrong takes down mail for the business, so:
-
-The domain is registered at **Squarespace** (which absorbed Google Domains —
-the old nameservers were `ns-cloud-*.googledomains.com`). DNSSEC is off, which
-removes the usual zone-move footgun; if that ever changes, disable DNSSEC at the
-registrar *before* switching nameservers or the domain stops resolving entirely.
-
-1. Cloudflare → Add a domain → `crystalnurse.com`. Its scan imports existing
-   records automatically.
-2. **Count the records before touching the registrar.** The scan is not
-   exhaustive — Cloudflare says so in its own banner, and in practice it missed
-   two records here. Squarespace had 15; the scan imported 13. The two it
-   dropped were the Google Workspace verification CNAMEs:
-
-   | Type | Name | Content |
-   |---|---|---|
-   | CNAME | `vzrr7quaaqdh` | `gv-n3ptuyenuje5g2.dv.googlehosted.com` |
-   | CNAME | `jwwan234ewld` | `gv-jkrkjuvp7psh4h.dv.googlehosted.com` |
-
-   Read these off `dig`, never off a screenshot — the second contains `jkr`,
-   which is easy to read back as `jrk`. Losing them lets Google un-verify domain
-   ownership, which puts Workspace admin and mail at risk.
-
-   Also confirm: five Google MX records (`aspmx.l.google.com`, `alt1`–`alt4`),
-   the SPF TXT (`v=spf1 include:_spf.google.com ~all`), the DKIM TXT at
-   `google._domainkey`, four apex A records for GitHub Pages
-   (`185.199.108–111.153`), and `www` → `lilseyi.github.io`.
-
-3. Set the apex A records, `www`, and `_domainconnect` to **DNS only** (grey
-   cloud). Cloudflare imports them Proxied by default and flags them with a
-   warning icon, which is the clue. GitHub Pages renews its TLS certificate by
-   HTTP validation; a proxied record means that request never reaches GitHub, so
-   the certificate eventually fails to renew and the site starts serving TLS
-   errors. With SSL mode set to Flexible you get a redirect loop immediately
-   instead. MX and TXT records aren't proxyable and need no change.
-4. Only now change the nameservers — Squarespace → Domain → **Domain
-   Nameservers** — to the two shown on the Cloudflare zone's Overview page.
-5. Once the zone is active, send yourself a test email and load
-   `https://crystalnurse.com` before moving on. Squarespace TTLs are 4 hours, so
-   allow time before concluding something is broken.
-
-The `admin.crystalnurse.com` record is the exception to step 3: Cloudflare
-creates it when you add the Pages custom domain, and it *should* stay proxied.
-
-**Then the Pages project:**
-
-1. Cloudflare → Workers & Pages → Create → Pages → **Direct upload**, named
-   `crystalcare-admin`.
-2. Repo secrets in the `production` environment:
-   - `CLOUDFLARE_API_TOKEN` — a token with **Cloudflare Pages: Edit**
-   - `CLOUDFLARE_ACCOUNT_ID`
+1. Repo secrets in the `production` environment:
+   - `EXPO_TOKEN` — expo.dev → Account settings → Access tokens
    - `EXPO_PUBLIC_CONVEX_URL` — the production Convex URL
-3. Pages project → Custom domains → add `admin.crystalnurse.com`. Cloudflare
-   creates the DNS record and issues the certificate itself.
+2. expo.dev → the `crystalcare` project → **Hosting** → Custom domain →
+   `admin.crystalnurse.com`. It gives you three records:
 
-#### Not using Cloudflare
+   | Type | Name | Points to |
+   |---|---|---|
+   | TXT | `_cf-custom-hostname.admin` | ownership verification |
+   | CNAME | `_acme-challenge.admin` | certificate validation |
+   | CNAME | `admin` | `origin.expo.app` |
 
-If moving the zone isn't wanted, host the portal on Netlify or Vercel instead —
-both take a CNAME from external DNS and issue a certificate, so DNS stays at
-Google. Replace the "Publish to Cloudflare Pages" step in `deploy-admin.yml`
-with that provider's deploy action; everything else — the build, the SPA
-fallback, `EXPO_PUBLIC_CONVEX_URL` — is unchanged.
+3. Add them at Squarespace (Domains → DNS → Custom records). Add them one at a
+   time and refresh between each for a zero-downtime setup; all three at once is
+   fine for a domain that isn't serving yet, which `admin` isn't.
 
-`EXPO_PUBLIC_CONVEX_URL` is baked into the JavaScript at build time, not read at
-runtime. A missing value ships a portal that silently can't reach the backend,
-so the workflow checks for it before building.
+Deploys go to the production URL, currently `https://crystalcare.expo.app`,
+which the custom domain fronts once it verifies.
+
+Manual deploy, if you ever need one:
+
+```bash
+pnpm deploy:admin        # builds and promotes to production
+```
 
 ### crystalnurse.com (GitHub Pages)
 
@@ -192,8 +144,8 @@ builds at the domain root instead of under `/crystalnurse/`.
 
 ## Rolling back
 
-- **Portal**: Cloudflare Pages keeps every deployment — promote a previous one
-  from the dashboard. Instant, no rebuild.
+- **Portal**: EAS keeps every deployment — promote a previous one from
+  expo.dev → Hosting → Deployments. Instant, no rebuild.
 - **Backend**: revert the commit and merge. There is no undo for a migration
   that has already run; write a new migration that reverses it.
 - **Marketing site**: re-run an earlier `deploy-site.yml` run.

@@ -8,7 +8,7 @@
     "dev": "expo start --dev-client",
     "web": "expo start --web",
     "build": "pnpm build:web",
-    "build:web": "expo export --platform web --output-dir dist && node scripts/spa-fallback.js",
+    "build:web": "expo export --platform web --output-dir dist",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "jest --passWithNoTests",
@@ -16,7 +16,9 @@
     "android": "expo run:android",
     "build:dev": "eas build --profile development",
     "build:staging": "eas build --profile staging",
-    "build:production": "eas build --profile production"
+    "build:production": "eas build --profile production",
+    "deploy": "eas deploy",
+    "deploy:prod": "eas deploy --prod"
   },
   "dependencies": {
     "@convex-dev/auth": "^0.0.90",

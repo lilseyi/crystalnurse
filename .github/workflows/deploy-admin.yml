@@ -1,24 +1,23 @@
 # Publishes the admin portal to https://admin.crystalnurse.com on every merge to
-# main.
+# main, via EAS Hosting.
 #
-# Hosted on Cloudflare Pages rather than GitHub Pages because a repo only gets
-# one Pages site, and that one is already the public marketing site at
-# crystalnurse.com (see deploy-site.yml).
+# ── Why EAS rather than a generic static host ──────────────────────────────
+# The portal is an Expo app, so EAS hosts what it already builds: SPA routing
+# works natively (no _redirects or 404.html workaround), and the same account
+# and project handle native iOS/Android builds if caregivers ever need this on a
+# phone. It also keeps DNS where it is — a custom domain here is three records
+# added at the registrar, where a Cloudflare Pages custom domain would have
+# required moving the whole crystalnurse.com zone, live Google Workspace email
+# and all.
 #
 # ── One-time setup ─────────────────────────────────────────────────────────
-#  1. crystalnurse.com must be a Cloudflare zone. A Pages custom domain can't be
-#     reached by a CNAME from another DNS provider (Cloudflare error 1001), and
-#     the partial/subdomain setups that would avoid the move need a Business or
-#     Enterprise plan. The zone carries live Google Workspace email, so follow
-#     the ordered steps in docs/DEPLOYING.md rather than improvising.
-#  2. Cloudflare dashboard → Workers & Pages → Create → Pages → "Direct upload",
-#     name it `crystalcare-admin`.
-#  3. Repo secrets (Settings → Environments → production):
-#       CLOUDFLARE_API_TOKEN     — token with the "Cloudflare Pages: Edit" permission
-#       CLOUDFLARE_ACCOUNT_ID    — from any Cloudflare dashboard URL
+#  1. Repo secrets (Settings → Environments → production):
+#       EXPO_TOKEN               — expo.dev → Account settings → Access tokens
 #       EXPO_PUBLIC_CONVEX_URL   — the production Convex URL (.convex.cloud)
-#  4. Pages project → Custom domains → add `admin.crystalnurse.com`. Cloudflare
-#     creates the DNS record and issues the certificate itself.
+#  2. Custom domain: expo.dev → this project → Hosting → Custom domain, then add
+#     the three records it gives you at Squarespace (a verification TXT, an
+#     _acme-challenge CNAME, and `admin` CNAME → origin.expo.app).
+#     Requires an Expo Starter plan or above.
 # ───────────────────────────────────────────────────────────────────────────
 name: Deploy admin portal
 
@@ -56,39 +55,40 @@ jobs:
 
       - name: Check required secrets
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EXPO_PUBLIC_CONVEX_URL: ${{ secrets.EXPO_PUBLIC_CONVEX_URL }}
         run: |
-          for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID EXPO_PUBLIC_CONVEX_URL; do
+          for name in EXPO_TOKEN EXPO_PUBLIC_CONVEX_URL; do
             if [ -z "${!name:-}" ]; then
               echo "::error::missing required secret '$name' in the 'production' environment."
               exit 1
             fi
           done
 
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
       - name: Install
         run: pnpm install --frozen-lockfile
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # The portal imports Convex's generated API types, which aren't committed.
+      # The portal imports Convex's generated API types.
       - name: Generate Convex types
         run: npx convex codegen
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
 
       # EXPO_PUBLIC_CONVEX_URL is baked into the bundle at build time, not read
-      # at runtime — a missing value here ships a portal that can't reach the
-      # backend, with no error until someone opens it.
+      # at runtime — a missing value ships a portal that can't reach the
+      # backend, with no error until someone opens it. Hence the check above.
       - name: Build
         run: pnpm build:ops-web
         env:
           EXPO_PUBLIC_CONVEX_URL: ${{ secrets.EXPO_PUBLIC_CONVEX_URL }}
 
-      - name: Publish to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy apps/ops/dist --project-name=crystalcare-admin --branch=main
+      - name: Deploy to EAS Hosting
+        working-directory: apps/ops
+        run: eas deploy --prod --non-interactive

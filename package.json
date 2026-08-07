@@ -15,7 +15,8 @@
     "test": "turbo run test",
     "setup:secrets": "node scripts/setup-secrets.js",
     "setup:auth-keys": "node scripts/setup-auth-keys.js",
-    "push:secrets": "node scripts/push-secrets.js"
+    "push:secrets": "node scripts/push-secrets.js",
+    "deploy:admin": "pnpm --filter @crystalcare/ops deploy:prod"
   },
   "devDependencies": {
     "@supa-media/dev": "^1.0.0",

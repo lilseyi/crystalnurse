@@ -117,8 +117,7 @@ directly from 1Password. Once seeded, uncomment the `push:` trigger in
 |---|---|---|
 | `CONVEX_DEPLOY_KEY` | 1Password → `CONVEX_DEPLOY_KEY` → `production` | `deploy-convex.yml`, `deploy-admin.yml` |
 | `EXPO_PUBLIC_CONVEX_URL` | `https://accurate-gull-766.convex.cloud` | `deploy-admin.yml` |
-| `CLOUDFLARE_API_TOKEN` | token with **Cloudflare Pages: Edit** | `deploy-admin.yml` |
-| `CLOUDFLARE_ACCOUNT_ID` | 1Password → `CLOUDFLARE_ACCOUNT_ID` | `deploy-admin.yml` |
+| `EXPO_TOKEN` | expo.dev → Account settings → Access tokens | `deploy-admin.yml` |
 
 `EXPO_PUBLIC_CONVEX_URL` is baked into the JavaScript at build time, not read at
 runtime. If it's missing, the build still succeeds and ships a portal that
@@ -147,13 +146,28 @@ check on PRs.
 `GITHUB_TOKEN` is provided automatically by Actions — it's what authenticates
 `pnpm install` against the private `@supa-media/*` registry. Don't create one.
 
-## 6. Hosting for admin.crystalnurse.com
+## 6. admin.crystalnurse.com (EAS Hosting)
 
-See [DEPLOYING.md](./DEPLOYING.md). Short version: Cloudflare Pages requires
-`crystalnurse.com` to be a Cloudflare zone, which means moving the nameservers —
-and the zone carries live Google Workspace email, so follow the ordered steps
-there. If you'd rather not move DNS, Netlify or Vercel work with a CNAME from
-Google Cloud DNS.
+The portal is already deployed and live at `https://crystalcare.expo.app`.
+Pointing the custom domain at it does **not** move DNS — the zone stays at
+Squarespace and Google Workspace email is never touched.
+
+Needs an Expo **Starter** plan or above (custom domains aren't on the free tier).
+
+1. expo.dev → the `crystalcare` project → **Hosting** → Custom domain →
+   `admin.crystalnurse.com`.
+2. Add the three records it gives you at Squarespace → Domains → DNS →
+   Custom records:
+
+   | Type | Name | Points to |
+   |---|---|---|
+   | TXT | `_cf-custom-hostname.admin` | ownership verification |
+   | CNAME | `_acme-challenge.admin` | certificate validation |
+   | CNAME | `admin` | `origin.expo.app` |
+
+3. Wait for it to verify; the certificate issues automatically.
+
+Nothing else in the zone changes. See [DEPLOYING.md](./DEPLOYING.md).
 
 ## 7. GitHub Pages (marketing site)
 

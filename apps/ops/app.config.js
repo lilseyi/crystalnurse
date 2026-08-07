@@ -65,11 +65,12 @@ module.exports = ({ config }) => ({
     baseUrl: process.env.EXPO_PUBLIC_WEB_BASE_URL ?? "",
   },
   extra: {
-    // Fill these in when you set up EAS for native builds (`eas init`).
-    // The web build doesn't need them.
-    eas: { projectId: process.env.EAS_PROJECT_ID ?? undefined },
+    // Identifies the Expo project that EAS Hosting deploys to, and that native
+    // builds would use later. Not a secret — it's a public identifier, and it
+    // has to be committed because `eas deploy` reads it from here.
+    eas: { projectId: "46ddf882-a300-4ea2-98e6-3ebed1a662b6" },
     router: { origin: false },
   },
-  owner: process.env.EXPO_OWNER ?? undefined,
+  owner: "lilseyi",
   runtimeVersion: { policy: "appVersion" },
 });

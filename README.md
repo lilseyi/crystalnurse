@@ -27,7 +27,7 @@ claude
 
 ```
 apps/site      Marketing site        Astro + Tailwind      → crystalnurse.com
-apps/ops       Admin portal          Expo Router → web     → admin.crystalnurse.com
+apps/ops       Admin portal          Expo Router → web     → admin.crystalnurse.com (EAS Hosting)
 apps/convex    Backend               Convex (database + functions)
 packages/shared  Constants both sides import
 ```
