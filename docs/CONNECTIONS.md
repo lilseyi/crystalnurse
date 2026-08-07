@@ -77,17 +77,30 @@ in the portal:
 
 Plus `CONVEX_DEPLOY_KEY`, which only GitHub Actions uses to deploy.
 
-They're stored in **1Password**, vault `Crystal`, and referenced from
-`.env.example` — a committed template holding no actual secrets, only pointers
-like `op://Crystal/Resend/api-key`.
+They're stored in **1Password**, vault `Crystal`, one item per environment
+variable — the item titled exactly as the variable, with `dev` / `staging` /
+`production` fields. `.env.example` is a committed template holding no actual
+secrets, only pointers:
+
+```
+RESEND_API_KEY=op://Crystal/RESEND_API_KEY/{{ENV}}
+```
+
+`{{ENV}}` is filled in per target: `dev` for local work, `production` when
+pushing to the live deployment. Production values are read straight from
+1Password and never written to disk.
+
+`JWT_PRIVATE_KEY` and `JWKS` hold a **different key pair per environment**. That
+matters: one shared pair would mean a session minted against the dev backend is
+accepted by production.
 
 ### Setting them up
 
 ```bash
-pnpm setup:auth-keys   # generates the signing keys into 1Password (once, ever)
-pnpm setup:secrets     # 1Password → .env.local on your machine
-pnpm push:secrets      # .env.local → the dev Convex deployment
-pnpm push:secrets --prod
+pnpm setup:auth-keys      # generates the signing keys into 1Password (once, ever)
+pnpm setup:secrets        # 1Password (dev) → .env.local
+pnpm push:secrets         # .env.local → the dev deployment
+pnpm push:secrets --prod  # 1Password (production) → the prod deployment
 ```
 
 `push:secrets` is the step people forget. Convex functions read their
@@ -101,7 +114,7 @@ signing keys signs everyone out.
 ## Rotating a key
 
 - **A connection**: save it again in the portal. Takes effect immediately.
-- **A bootstrap secret**: change it in 1Password, then
-  `pnpm setup:secrets && pnpm push:secrets --prod`. Never edit the value in the
-  Convex dashboard directly — the next push overwrites it, and 1Password is
-  meant to be the record of what the value actually is.
+- **A bootstrap secret**: change the `production` field in 1Password, then
+  `pnpm push:secrets --prod`. Never edit the value in the Convex dashboard
+  directly — the next push overwrites it, and 1Password is meant to be the
+  record of what the value actually is.

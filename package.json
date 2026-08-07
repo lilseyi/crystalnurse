@@ -1,7 +1,7 @@
 {
   "name": "crystalcare",
   "private": true,
-  "description": "Crystal Care Nursing — marketing site + operations backend",
+  "description": "Crystal Care Nursing \u2014 marketing site + operations backend",
   "scripts": {
     "dev": "node scripts/dev.js",
     "dev:ops": "node scripts/dev.js --mobile",
@@ -13,7 +13,7 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "setup:secrets": "op inject -i .env.example -o .env.local",
+    "setup:secrets": "node scripts/setup-secrets.js",
     "setup:auth-keys": "node scripts/setup-auth-keys.js",
     "push:secrets": "node scripts/push-secrets.js"
   },

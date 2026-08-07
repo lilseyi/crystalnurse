@@ -3,17 +3,39 @@
 Everything that has to exist outside the code before the portal is live.
 Work top to bottom — later steps need values from earlier ones.
 
-## 1. Convex production deployment
+## How secrets are stored
 
-Convex dashboard → create a production deployment for this project.
+One 1Password item per environment variable, in the vault `Crystal`, titled
+**exactly as the variable**, with `dev` / `staging` / `production` fields:
 
-Then Settings → **Deploy keys** → generate one. You need two values from here:
+```
+Crystal
+├── RESEND_API_KEY        dev · staging · production
+├── JWT_PRIVATE_KEY       dev · production
+├── JWKS                  dev · production
+└── CONVEX_DEPLOY_KEY     production
+```
 
-- the **deploy key** (starts `prod:`)
-- the **deployment URL** (`https://<name>.convex.cloud`)
+`.env.example` references them as `op://Crystal/<VAR>/{{ENV}}`. Item titles must
+be unique within the vault — two items with the same title make `op read`
+ambiguous and every script fails until one is renamed or removed.
 
-Store the deploy key in 1Password: vault `Crystal`, item `Convex`, field
-`deploy-key`.
+## 1. Convex project and production deployment
+
+There is no separate "create a release" step. A project has a dev deployment and
+a production deployment; generating a **production deploy key** is what targets
+the latter, and the first `npx convex deploy` populates it.
+
+The cloud project already exists: **`crystalcare`** in the `supa-media` team,
+dev deployment `formal-mastiff-577`.
+
+For production: Convex dashboard → switch the environment selector to
+**Production** → Settings → **Deploy keys** → generate. You need two values:
+
+- the **deploy key** (starts `prod:`) → 1Password item `CONVEX_DEPLOY_KEY`,
+  `production` field
+- the **deployment URL** (`https://<name>.convex.cloud`) → the
+  `EXPO_PUBLIC_CONVEX_URL` GitHub secret in step 5
 
 ## 2. Resend
 
@@ -22,26 +44,32 @@ For sign-in codes. Sign up, then:
 1. **Domains → Add domain → `crystalnurse.com`.** Resend gives you DNS records
    (a DKIM TXT, and usually an MX + TXT for a sending subdomain). Add them
    wherever DNS is managed. Codes will not deliver until this verifies.
-2. **API keys → Create.** Store it in 1Password: vault `Crystal`, item `Resend`,
-   field `api-key`.
+2. **API keys → Create.** Store it in 1Password: vault `Crystal`, item
+   `RESEND_API_KEY`, in the `dev` and `production` fields.
 
 Resend's DKIM record sits alongside the existing Google Workspace records —
 it doesn't replace them, and it doesn't affect inbound mail.
 
 ## 3. Sign-in signing keys
 
-Already done — `pnpm setup:auth-keys` generated them into 1Password
-(`Crystal` → `Auth` → `jwt-private-key`, `jwks`).
+Already done — `pnpm setup:auth-keys` generated them into 1Password as
+`JWT_PRIVATE_KEY` and `JWKS`, with a **separate key pair for dev and
+production**. Sharing one pair across environments would let a session minted
+against the dev backend be accepted by production.
 
 Never regenerate these. Replacing them signs everyone out.
 
 ## 4. Push the secrets to Convex
 
 ```bash
-pnpm setup:secrets          # 1Password → .env.local
+pnpm setup:secrets          # 1Password (dev) → .env.local
 pnpm push:secrets           # .env.local → dev deployment
-pnpm push:secrets --prod    # .env.local → production
+pnpm push:secrets --prod    # 1Password (production) → prod deployment
 ```
+
+`--prod` reads production values straight from 1Password; they never touch
+disk. `setup:secrets` merges into `.env.local` rather than overwriting it, so
+the `CONVEX_DEPLOYMENT` line that `npx convex dev` wrote survives.
 
 Convex functions read their environment from the *deployment*, not from your
 laptop. If sign-in codes stop arriving, this is the first thing to check.
