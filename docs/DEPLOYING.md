@@ -108,8 +108,9 @@ never in the blast radius. (Cloudflare Pages was the original plan and would
 have required moving the whole zone, because its free plan supports only a full
 setup. That trade is what ruled it out.)
 
-Requires an Expo **Starter** plan or above; custom domains aren't on the free
-tier.
+Requires an Expo **Starter** plan or above (custom domains aren't on the free
+tier). The `lilseyi` account is already on Starter, so this is included — no
+additional cost.
 
 1. Repo secrets in the `production` environment:
    - `EXPO_TOKEN` — expo.dev → Account settings → Access tokens

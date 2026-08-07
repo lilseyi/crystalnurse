@@ -81,8 +81,9 @@ laptop. If sign-in codes stop arriving, this is the first thing to check.
 
 ## 5. GitHub repo secrets and variables
 
-**Done for the four deploy secrets** — the `production` environment exists and
-holds all of them, sourced from 1Password.
+**Done** — the `production` environment exists and holds all three deploy
+secrets (`CONVEX_DEPLOY_KEY`, `EXPO_PUBLIC_CONVEX_URL`, `EXPO_TOKEN`), each
+sourced from 1Password.
 
 ### Keeping them in sync
 
@@ -117,7 +118,7 @@ directly from 1Password. Once seeded, uncomment the `push:` trigger in
 |---|---|---|
 | `CONVEX_DEPLOY_KEY` | 1Password → `CONVEX_DEPLOY_KEY` → `production` | `deploy-convex.yml`, `deploy-admin.yml` |
 | `EXPO_PUBLIC_CONVEX_URL` | `https://accurate-gull-766.convex.cloud` | `deploy-admin.yml` |
-| `EXPO_TOKEN` | expo.dev → Account settings → Access tokens | `deploy-admin.yml` |
+| `EXPO_TOKEN` | 1Password → `EXPO_TOKEN` → `production` | `deploy-admin.yml` |
 
 `EXPO_PUBLIC_CONVEX_URL` is baked into the JavaScript at build time, not read at
 runtime. If it's missing, the build still succeeds and ships a portal that
@@ -152,7 +153,8 @@ The portal is already deployed and live at `https://crystalcare.expo.app`.
 Pointing the custom domain at it does **not** move DNS — the zone stays at
 Squarespace and Google Workspace email is never touched.
 
-Needs an Expo **Starter** plan or above (custom domains aren't on the free tier).
+Needs an Expo **Starter** plan or above. The `lilseyi` account is already on
+Starter (active), so the custom domain is included at no extra cost.
 
 1. expo.dev → the `crystalcare` project → **Hosting** → Custom domain →
    `admin.crystalnurse.com`.
