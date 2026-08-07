@@ -9,7 +9,7 @@ name: Deploy Ops App Update (OTA)
 # exactly like a native build without it. (See docs/SECRETS.md.)
 
 # DISABLED until there are native builds to update. The office uses the web
-# build, which ships via deploy-admin.yml — this workflow only pushes JS
+# build, which ships via deploy.yml — this workflow only pushes JS
 # updates to installed iOS/Android builds, and none exist yet.
 #
 # The groundwork is already done: the EAS project exists, and EXPO_TOKEN and

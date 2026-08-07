@@ -121,13 +121,13 @@ Rotating either one is manual — nothing can sync them.
 
 | Secret | Value | Used by |
 |---|---|---|
-| `CONVEX_DEPLOY_KEY` | 1Password → `CONVEX_DEPLOY_KEY` → `production` | `deploy-convex.yml`, `deploy-admin.yml` |
-| `EXPO_PUBLIC_CONVEX_URL` | `https://accurate-gull-766.convex.cloud` | `deploy-admin.yml` |
-| `EXPO_TOKEN` | 1Password → `EXPO_TOKEN` → `production` | `deploy-admin.yml` |
+| `CONVEX_DEPLOY_KEY` | 1Password → `CONVEX_DEPLOY_KEY` → `production` | `deploy.yml` |
+| `EXPO_PUBLIC_CONVEX_URL` | `https://accurate-gull-766.convex.cloud` | `deploy.yml` |
+| `EXPO_TOKEN` | 1Password → `EXPO_TOKEN` → `production` | `deploy.yml` |
 
 `EXPO_PUBLIC_CONVEX_URL` is baked into the JavaScript at build time, not read at
 runtime. If it's missing, the build still succeeds and ships a portal that
-silently can't reach the backend — which is why `deploy-admin.yml` checks for it
+silently can't reach the backend — which is why `deploy.yml` checks for it
 before building.
 
 ### Secrets — repository level (optional)

@@ -7,27 +7,32 @@ Everything ships on merge to `main`. Nothing needs a manual deploy.
 | Workflow | Trigger | Result |
 |---|---|---|
 | `ci.yml` | every PR | typecheck, lint, test, and both builds |
-| `deploy-convex.yml` | merge to main | backend deployed, then pending migrations run |
-| `deploy-admin.yml` | merge to main (portal files) | `admin.crystalnurse.com` (EAS Hosting) |
+| `deploy.yml` | merge to main | backend → migrations → `admin.crystalnurse.com` |
 | `deploy-site.yml` | merge to main | `crystalnurse.com` |
 | `deploy-ops-update.yml` | disabled | phone-app updates, if native builds ever exist |
 
-`deploy-convex.yml` deliberately has no path filter. A migration can be
-triggered by a change anywhere, and a workflow that didn't run looks exactly
-like one that passed. It deploys every time; Convex does nothing when nothing
-changed.
-
 ## Order of operations
 
-The backend deploy does two steps, in this order, and it matters:
+`deploy.yml` runs two jobs, and the sequence is the point:
 
-1. `npx convex deploy` — schema and functions
-2. `npx convex run functions/migrations:runPending --prod`
+1. **backend** — `npx convex deploy` (schema and functions), then
+   `npx convex run functions/migrations:runPending --prod`
+2. **portal** — `needs: backend`, so it only builds once the backend is live
 
-A migration that ran first could reference a field the deployed schema didn't
-have yet. Running second, it always sees the new shape.
+Both orderings matter. A migration running before the schema deploy could
+reference a field that doesn't exist yet. And a portal published before the
+backend could call a Convex function that isn't deployed — which is why these
+are one workflow rather than two: GitHub can't express `needs:` across
+workflows, so parallel workflows would race.
 
-Both deploys share a `concurrency` group, so two merges in quick succession
+Neither job has a path filter, deliberately. Filters kept missing inputs — a
+change to the root `package.json` or `pnpm-lock.yaml` affects the portal build
+without touching `apps/ops`, and a migration can be prompted by a change
+anywhere. A workflow that didn't run is indistinguishable from one that passed.
+Convex no-ops when nothing changed, and an EAS deploy of an identical bundle
+re-uploads nothing.
+
+The workflow holds one `concurrency` group, so two merges in quick succession
 queue rather than race.
 
 ## Migrations
@@ -112,7 +117,7 @@ Requires an Expo **Starter** plan or above (custom domains aren't on the free
 tier). The `lilseyi` account is already on Starter, so this is included — no
 additional cost.
 
-1. Repo secrets in the `production` environment:
+1. Repo secrets in the `production` environment (already set):
    - `EXPO_TOKEN` — expo.dev → Account settings → Access tokens
    - `EXPO_PUBLIC_CONVEX_URL` — the production Convex URL
 2. expo.dev → the `crystalcare` project → **Hosting** → Custom domain →

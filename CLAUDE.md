@@ -186,6 +186,7 @@ part that matters most. In short:
 - **Never commit or push to `main`.** Branch, then open a pull request.
 - Small, focused commits with messages that say *why*.
 - Merge only when they've said they want the change live.
-- Merging to `main` deploys: the backend and data migrations via
-  `deploy-convex.yml`, the admin portal via `deploy-admin.yml`, the marketing
-  site via `deploy-site.yml`.
+- Merging to `main` deploys: `deploy.yml` runs the backend and its data
+  migrations, *then* the admin portal (in that order, on purpose — a portal
+  published before the backend could call a function that isn't live yet); the
+  marketing site goes via `deploy-site.yml`.

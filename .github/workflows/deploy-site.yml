@@ -2,7 +2,7 @@
 # crystalnurse.com.
 #
 # The admin portal is NOT here — it deploys separately to
-# admin.crystalnurse.com via deploy-admin.yml.
+# admin.crystalnurse.com via deploy.yml.
 name: Deploy marketing site
 
 on:
