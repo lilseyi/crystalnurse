@@ -26,16 +26,19 @@ There is no separate "create a release" step. A project has a dev deployment and
 a production deployment; generating a **production deploy key** is what targets
 the latter, and the first `npx convex deploy` populates it.
 
-The cloud project already exists: **`crystalcare`** in the `supa-media` team,
-dev deployment `formal-mastiff-577`.
+**Done.** Project `crystalcare`, team `supa-media`:
 
-For production: Convex dashboard → switch the environment selector to
-**Production** → Settings → **Deploy keys** → generate. You need two values:
+| | Deployment | URL |
+|---|---|---|
+| Dev | `formal-mastiff-577` | `https://formal-mastiff-577.convex.cloud` |
+| Production | `accurate-gull-766` | `https://accurate-gull-766.convex.cloud` |
 
-- the **deploy key** (starts `prod:`) → 1Password item `CONVEX_DEPLOY_KEY`,
-  `production` field
-- the **deployment URL** (`https://<name>.convex.cloud`) → the
-  `EXPO_PUBLIC_CONVEX_URL` GitHub secret in step 5
+The production deploy key is in 1Password (`CONVEX_DEPLOY_KEY` → `production`),
+and both deployments have their environment variables set.
+
+If the production deployment is ever recreated, update `productionIdentifier`
+in `apps/convex/auth.ts` to match the new name — it's what stops the
+development sign-in bypass from working there.
 
 ## 2. Resend
 
@@ -59,7 +62,9 @@ against the dev backend be accepted by production.
 
 Never regenerate these. Replacing them signs everyone out.
 
-## 4. Push the secrets to Convex
+## 4. Push the secrets to Convex — done
+
+Both deployments are configured. For reference, or after rotating a key:
 
 ```bash
 pnpm setup:secrets          # 1Password (dev) → .env.local
@@ -85,10 +90,10 @@ The three deploy workflows run with `environment: production` and read these.
 
 | Secret | Value | Used by |
 |---|---|---|
-| `CONVEX_DEPLOY_KEY` | from step 1 | `deploy-convex.yml`, `deploy-admin.yml` |
-| `EXPO_PUBLIC_CONVEX_URL` | `https://<name>.convex.cloud` from step 1 | `deploy-admin.yml` |
+| `CONVEX_DEPLOY_KEY` | 1Password → `CONVEX_DEPLOY_KEY` → `production` | `deploy-convex.yml`, `deploy-admin.yml` |
+| `EXPO_PUBLIC_CONVEX_URL` | `https://accurate-gull-766.convex.cloud` | `deploy-admin.yml` |
 | `CLOUDFLARE_API_TOKEN` | token with **Cloudflare Pages: Edit** | `deploy-admin.yml` |
-| `CLOUDFLARE_ACCOUNT_ID` | from any Cloudflare dashboard URL | `deploy-admin.yml` |
+| `CLOUDFLARE_ACCOUNT_ID` | 1Password → `CLOUDFLARE_ACCOUNT_ID` | `deploy-admin.yml` |
 
 `EXPO_PUBLIC_CONVEX_URL` is baked into the JavaScript at build time, not read at
 runtime. If it's missing, the build still succeeds and ships a portal that
