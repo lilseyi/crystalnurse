@@ -8,11 +8,13 @@ name: Deploy Ops App Update (OTA)
 # EXPO_PUBLIC_CONVEX_URL would ship `undefined` and crash the app on launch —
 # exactly like a native build without it. (See docs/SECRETS.md.)
 
-# DISABLED until native builds exist. The office uses the web build, which
-# ships via deploy-site.yml — this workflow is only for installed iOS/Android
-# builds. To turn it on: run `eas init` in apps/ops, set EXPO_TOKEN and
-# EXPO_PUBLIC_CONVEX_URL in the `production` environment, then uncomment the
-# `push:` trigger below.
+# DISABLED until there are native builds to update. The office uses the web
+# build, which ships via deploy-admin.yml — this workflow only pushes JS
+# updates to installed iOS/Android builds, and none exist yet.
+#
+# The groundwork is already done: the EAS project exists, and EXPO_TOKEN and
+# EXPO_PUBLIC_CONVEX_URL are set in the `production` environment. To turn it on
+# after a first native build, uncomment the `push:` trigger below.
 on:
   # push:
   #   branches: [main]

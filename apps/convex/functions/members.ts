@@ -137,14 +137,12 @@ export const list = query({
 export const claimOwnership = mutation({
   args: { name: v.optional(v.string()) },
   handler: async (ctx, { name }) => {
-    const existing = await ctx.db.query("members").take(1);
-    if (existing.length > 0) {
-      throw new ConvexError({
-        code: "ALREADY_CLAIMED",
-        message: "Crystal Care Ops already has an owner. Ask them for an invite.",
-      });
-    }
-
+    // Identity is established BEFORE the table is inspected, on purpose. With
+    // the checks the other way round, an anonymous caller learns from the error
+    // whether this workspace has been claimed yet — and "not claimed" is
+    // exactly the signal that makes it worth attacking. The deployment URL is
+    // discoverable from the published bundle, so "nobody knows the address"
+    // isn't protection.
     const userId = (await requireAuthId(ctx)) as Doc<"users">["_id"];
     const user = await ctx.db.get(userId);
     const email = user?.email?.toLowerCase();
@@ -154,13 +152,20 @@ export const claimOwnership = mutation({
         message: "Sign in with an email address to claim ownership.",
       });
     }
-    // Without this, the one unauthenticated-by-membership path in the whole
-    // backend would let any address claim the workspace before the real owner
-    // gets to it.
+    // The one path into this backend that doesn't already require membership,
+    // so the domain rule has to be enforced here too.
     if (!isAllowedEmail(email)) {
       throw new ConvexError({
         code: "DOMAIN_NOT_ALLOWED",
         message: DISALLOWED_EMAIL_MESSAGE,
+      });
+    }
+
+    const existing = await ctx.db.query("members").take(1);
+    if (existing.length > 0) {
+      throw new ConvexError({
+        code: "ALREADY_CLAIMED",
+        message: "Crystal Care Ops already has an owner. Ask them for an invite.",
       });
     }
 
