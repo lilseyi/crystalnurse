@@ -119,19 +119,47 @@ external DNS (see "Not using Cloudflare" below).
 **The zone move — the careful order.** `crystalnurse.com` currently carries live
 Google Workspace email. Getting MX wrong takes down mail for the business, so:
 
+The domain is registered at **Squarespace** (which absorbed Google Domains —
+the old nameservers were `ns-cloud-*.googledomains.com`). DNSSEC is off, which
+removes the usual zone-move footgun; if that ever changes, disable DNSSEC at the
+registrar *before* switching nameservers or the domain stops resolving entirely.
+
 1. Cloudflare → Add a domain → `crystalnurse.com`. Its scan imports existing
    records automatically.
-2. **Check the imported records before touching the registrar.** All five Google
-   MX records (`aspmx.l.google.com` and `alt1`–`alt4`), the SPF TXT
-   (`v=spf1 include:_spf.google.com ~all`), any DKIM record, the four apex A
-   records for GitHub Pages (`185.199.108–111.153`), and `www` →
-   `lilseyi.github.io`.
-3. Set the apex A records and `www` to **DNS only** (grey cloud). GitHub Pages
-   manages its own certificate; proxying them invites certificate and redirect
-   problems for no benefit.
-4. Only now change the nameservers at the registrar to the two Cloudflare
-   nameservers shown on the zone's Overview page.
-5. Once the zone is active, send yourself a test email before moving on.
+2. **Count the records before touching the registrar.** The scan is not
+   exhaustive — Cloudflare says so in its own banner, and in practice it missed
+   two records here. Squarespace had 15; the scan imported 13. The two it
+   dropped were the Google Workspace verification CNAMEs:
+
+   | Type | Name | Content |
+   |---|---|---|
+   | CNAME | `vzrr7quaaqdh` | `gv-n3ptuyenuje5g2.dv.googlehosted.com` |
+   | CNAME | `jwwan234ewld` | `gv-jkrkjuvp7psh4h.dv.googlehosted.com` |
+
+   Read these off `dig`, never off a screenshot — the second contains `jkr`,
+   which is easy to read back as `jrk`. Losing them lets Google un-verify domain
+   ownership, which puts Workspace admin and mail at risk.
+
+   Also confirm: five Google MX records (`aspmx.l.google.com`, `alt1`–`alt4`),
+   the SPF TXT (`v=spf1 include:_spf.google.com ~all`), the DKIM TXT at
+   `google._domainkey`, four apex A records for GitHub Pages
+   (`185.199.108–111.153`), and `www` → `lilseyi.github.io`.
+
+3. Set the apex A records, `www`, and `_domainconnect` to **DNS only** (grey
+   cloud). Cloudflare imports them Proxied by default and flags them with a
+   warning icon, which is the clue. GitHub Pages renews its TLS certificate by
+   HTTP validation; a proxied record means that request never reaches GitHub, so
+   the certificate eventually fails to renew and the site starts serving TLS
+   errors. With SSL mode set to Flexible you get a redirect loop immediately
+   instead. MX and TXT records aren't proxyable and need no change.
+4. Only now change the nameservers — Squarespace → Domain → **Domain
+   Nameservers** — to the two shown on the Cloudflare zone's Overview page.
+5. Once the zone is active, send yourself a test email and load
+   `https://crystalnurse.com` before moving on. Squarespace TTLs are 4 hours, so
+   allow time before concluding something is broken.
+
+The `admin.crystalnurse.com` record is the exception to step 3: Cloudflare
+creates it when you add the Pages custom domain, and it *should* stay proxied.
 
 **Then the Pages project:**
 
