@@ -5,9 +5,16 @@ export interface Props {
   size?: "default" | "narrow" | "wide";
 }
 
-const { as: Tag = "div", class: className = "", size = "default" } = Astro.props;
+// Annotated so `size` resolves to the union rather than `any`. Without it,
+// indexing `widths` below is an implicit-any error, and a typo in a caller's
+// `size` would silently produce an undefined class.
+const {
+  as: Tag = "div",
+  class: className = "",
+  size = "default",
+}: Props = Astro.props;
 
-const widths = {
+const widths: Record<NonNullable<Props["size"]>, string> = {
   narrow: "max-w-prose",
   default: "max-w-content",
   wide: "max-w-[82rem]",

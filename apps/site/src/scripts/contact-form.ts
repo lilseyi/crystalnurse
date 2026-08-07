@@ -74,3 +74,10 @@ if (document.readyState === "loading") {
 } else {
   init();
 }
+
+// Marks this file as a module. Without a top-level import or export,
+// TypeScript treats it as a global script, so the `init` declared in each of
+// these files collides with the others ("Duplicate function implementation").
+// They are already loaded as modules at runtime via `import "..."` in a
+// <script> block, so this only tells the type-checker what is already true.
+export {};
