@@ -15,9 +15,9 @@
  */
 
 const { execFileSync } = require("node:child_process");
-const { generateKeyPairSync, createPublicKey } = require("node:crypto");
+const { generateKeyPairSync } = require("node:crypto");
 
-const VAULT = process.env.OP_VAULT ?? "Crystal Care";
+const VAULT = process.env.OP_VAULT ?? "Crystal";
 const ITEM = "Auth";
 
 function op(args, options = {}) {
@@ -64,7 +64,9 @@ function main() {
     .toString()
     .trimEnd();
 
-  const jwk = createPublicKey(publicKey).export({ format: "jwk" });
+  // generateKeyPairSync returns KeyObjects when no encoding is given, so the
+  // public key can be exported to JWK directly.
+  const jwk = publicKey.export({ format: "jwk" });
   const jwks = JSON.stringify({ keys: [{ use: "sig", alg: "RS256", ...jwk }] });
 
   // Newlines are collapsed to spaces: Convex environment variables are

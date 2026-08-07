@@ -99,17 +99,58 @@ pnpm push:secrets --prod
 
 ### admin.crystalnurse.com (Cloudflare Pages)
 
-1. Cloudflare dashboard → Workers & Pages → Create → Pages → **Direct upload**,
-   named `crystalcare-admin`.
+**Prerequisite: `crystalnurse.com` must be a Cloudflare zone.**
+
+This is not optional and not a preference. A Pages custom domain requires an
+active Cloudflare zone — pointing a CNAME at `*.pages.dev` from another DNS
+provider returns [Error 1001](https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-1xxx-errors/error-1001/)
+("a non-Cloudflare domain cannot CNAME to a Cloudflare domain"). The two setups
+that would avoid moving the zone are both out of reach on a free plan:
+
+| Setup | Free | Pro | Business | Enterprise |
+|---|---|---|---|---|
+| Full (whole zone on Cloudflare) | ✅ | ✅ | ✅ | ✅ |
+| Partial / CNAME-only | ❌ | ❌ | ✅ | ✅ |
+| Subdomain-only zone (`admin.` alone) | ❌ | ❌ | ❌ | ✅ |
+
+So: either move the whole zone, or host the portal somewhere that works with
+external DNS (see "Not using Cloudflare" below).
+
+**The zone move — the careful order.** `crystalnurse.com` currently carries live
+Google Workspace email. Getting MX wrong takes down mail for the business, so:
+
+1. Cloudflare → Add a domain → `crystalnurse.com`. Its scan imports existing
+   records automatically.
+2. **Check the imported records before touching the registrar.** All five Google
+   MX records (`aspmx.l.google.com` and `alt1`–`alt4`), the SPF TXT
+   (`v=spf1 include:_spf.google.com ~all`), any DKIM record, the four apex A
+   records for GitHub Pages (`185.199.108–111.153`), and `www` →
+   `lilseyi.github.io`.
+3. Set the apex A records and `www` to **DNS only** (grey cloud). GitHub Pages
+   manages its own certificate; proxying them invites certificate and redirect
+   problems for no benefit.
+4. Only now change the nameservers at the registrar to the two Cloudflare
+   nameservers shown on the zone's Overview page.
+5. Once the zone is active, send yourself a test email before moving on.
+
+**Then the Pages project:**
+
+1. Cloudflare → Workers & Pages → Create → Pages → **Direct upload**, named
+   `crystalcare-admin`.
 2. Repo secrets in the `production` environment:
    - `CLOUDFLARE_API_TOKEN` — a token with **Cloudflare Pages: Edit**
    - `CLOUDFLARE_ACCOUNT_ID`
    - `EXPO_PUBLIC_CONVEX_URL` — the production Convex URL
 3. Pages project → Custom domains → add `admin.crystalnurse.com`. Cloudflare
-   gives you a CNAME target.
-4. Add that CNAME in **Google Cloud DNS**, where `crystalnurse.com` is managed
-   (its nameservers are `ns-cloud-*.googledomains.com`). The certificate issues
-   automatically once the CNAME resolves.
+   creates the DNS record and issues the certificate itself.
+
+#### Not using Cloudflare
+
+If moving the zone isn't wanted, host the portal on Netlify or Vercel instead —
+both take a CNAME from external DNS and issue a certificate, so DNS stays at
+Google. Replace the "Publish to Cloudflare Pages" step in `deploy-admin.yml`
+with that provider's deploy action; everything else — the build, the SPA
+fallback, `EXPO_PUBLIC_CONVEX_URL` — is unchanged.
 
 `EXPO_PUBLIC_CONVEX_URL` is baked into the JavaScript at build time, not read at
 runtime. A missing value ships a portal that silently can't reach the backend,

@@ -6,15 +6,19 @@
 # crystalnurse.com (see deploy-site.yml).
 #
 # ── One-time setup ─────────────────────────────────────────────────────────
-#  1. Cloudflare dashboard → Workers & Pages → Create → Pages → "Direct upload",
+#  1. crystalnurse.com must be a Cloudflare zone. A Pages custom domain can't be
+#     reached by a CNAME from another DNS provider (Cloudflare error 1001), and
+#     the partial/subdomain setups that would avoid the move need a Business or
+#     Enterprise plan. The zone carries live Google Workspace email, so follow
+#     the ordered steps in docs/DEPLOYING.md rather than improvising.
+#  2. Cloudflare dashboard → Workers & Pages → Create → Pages → "Direct upload",
 #     name it `crystalcare-admin`.
-#  2. Repo secrets (Settings → Environments → production):
+#  3. Repo secrets (Settings → Environments → production):
 #       CLOUDFLARE_API_TOKEN     — token with the "Cloudflare Pages: Edit" permission
 #       CLOUDFLARE_ACCOUNT_ID    — from any Cloudflare dashboard URL
 #       EXPO_PUBLIC_CONVEX_URL   — the production Convex URL (.convex.cloud)
-#  3. In the Pages project → Custom domains → add `admin.crystalnurse.com`.
-#     Cloudflare gives you a CNAME target; add that CNAME in Google Cloud DNS,
-#     where crystalnurse.com is managed. The certificate issues automatically.
+#  4. Pages project → Custom domains → add `admin.crystalnurse.com`. Cloudflare
+#     creates the DNS record and issues the certificate itself.
 # ───────────────────────────────────────────────────────────────────────────
 name: Deploy admin portal
 

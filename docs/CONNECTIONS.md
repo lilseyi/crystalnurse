@@ -77,9 +77,9 @@ in the portal:
 
 Plus `CONVEX_DEPLOY_KEY`, which only GitHub Actions uses to deploy.
 
-They're stored in **1Password**, vault `Crystal Care`, and referenced from
+They're stored in **1Password**, vault `Crystal`, and referenced from
 `.env.example` — a committed template holding no actual secrets, only pointers
-like `op://Crystal Care/Resend/api-key`.
+like `op://Crystal/Resend/api-key`.
 
 ### Setting them up
 

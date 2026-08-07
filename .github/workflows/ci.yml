@@ -20,6 +20,11 @@ jobs:
     permissions:
       contents: read
       packages: read
+    env:
+      # Lifted to job-level env because the `secrets` context is NOT available
+      # in a step-level `if:` — only `env` is. Testing `secrets.X != ''` in a
+      # step condition silently never matches.
+      CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -41,7 +46,7 @@ jobs:
       # in is stale. Skipped when no deploy key is available (e.g. a fork's PR),
       # where the committed types are used as-is.
       - name: Check Convex types are up to date
-        if: ${{ secrets.CONVEX_DEPLOY_KEY != '' }}
+        if: ${{ env.CONVEX_DEPLOY_KEY != '' }}
         run: |
           npx convex codegen
           if ! git diff --quiet -- apps/convex/_generated; then
@@ -50,8 +55,6 @@ jobs:
             git diff --stat -- apps/convex/_generated
             exit 1
           fi
-        env:
-          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
 
       - name: Typecheck
         run: pnpm typecheck

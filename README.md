@@ -81,6 +81,7 @@ boundary, not an oversight — read
 
 | | |
 |---|---|
+| [SETUP-CHECKLIST.md](./docs/SETUP-CHECKLIST.md) | Everything to configure before it's live |
 | [BUILDING-THE-PORTAL.md](./docs/BUILDING-THE-PORTAL.md) | How to add sections, for a non-developer |
 | [CONNECTIONS.md](./docs/CONNECTIONS.md) | Where keys and secrets live |
 | [DEPLOYING.md](./docs/DEPLOYING.md) | Deploys, migrations, first-time setup |
