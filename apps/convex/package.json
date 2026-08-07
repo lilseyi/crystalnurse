@@ -1,0 +1,22 @@
+{
+  "name": "@crystalcare/convex",
+  "version": "1.0.0",
+  "private": true,
+  "//": "main/types point at Convex's generated API so the ops app can `import { api } from \"@crystalcare/convex\"`. These files don't exist until `npx convex dev` (or `convex codegen`) has run once.",
+  "main": "_generated/api.js",
+  "types": "_generated/api.d.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "dev": "convex dev"
+  },
+  "dependencies": {
+    "@convex-dev/auth": "^0.0.90",
+    "@crystalcare/shared": "workspace:*",
+    "@supa-media/convex": "^1.1.0",
+    "convex": "^1.31.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "~5.9.2"
+  }
+}

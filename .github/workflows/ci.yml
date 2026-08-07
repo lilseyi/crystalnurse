@@ -1,0 +1,79 @@
+# Runs on every PR. Nothing merges to main without this passing.
+#
+# NOTE: hand-written rather than a call to the framework's reusable
+# `Supa-Media/supa-framework/.github/workflows/ci.yml@v1`, because that workflow
+# hardcodes `working-directory: apps/mobile` and this repo's app lives at
+# `apps/ops`. If a `mobile-dir` input lands upstream, delete this and call the
+# reusable workflow instead.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    name: Typecheck, lint, test, build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    env:
+      # Lifted to job-level env because the `secrets` context is NOT available
+      # in a step-level `if:` — only `env` is. Testing `secrets.X != ''` in a
+      # step condition silently never matches.
+      CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # @supa-media/* live on GitHub Packages, a private registry — see .npmrc.
+      - name: Install
+        run: pnpm install --frozen-lockfile
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # apps/convex/_generated/* IS committed, so this is a freshness check, not
+      # a build step: it regenerates from schema.ts and fails if what's checked
+      # in is stale. Skipped when no deploy key is available (e.g. a fork's PR),
+      # where the committed types are used as-is.
+      - name: Check Convex types are up to date
+        if: ${{ env.CONVEX_DEPLOY_KEY != '' }}
+        run: |
+          npx convex codegen
+          if ! git diff --quiet -- apps/convex/_generated; then
+            echo "::error::apps/convex/_generated is out of date."
+            echo "Run 'npx convex codegen' locally and commit the result."
+            git diff --stat -- apps/convex/_generated
+            exit 1
+          fi
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # Includes the framework's native-safety test: any native module imported
+      # at the top level but missing from apps/ops/native-deps.json fails here.
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+
+      # The build catches what typecheck can't — a bad import path, a missing
+      # asset, a Metro resolution failure. If the portal doesn't export, the PR
+      # isn't green.
+      - name: Build admin portal
+        run: pnpm build:ops-web
+        env:
+          EXPO_PUBLIC_CONVEX_URL: "https://example.convex.cloud"
+
+      - name: Build marketing site
+        run: pnpm build:site

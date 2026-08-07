@@ -1,0 +1,63 @@
+# Publishes the public marketing site (apps/site) to GitHub Pages at
+# crystalnurse.com.
+#
+# The admin portal is NOT here — it deploys separately to
+# admin.crystalnurse.com via deploy.yml.
+name: Deploy marketing site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+env:
+  # Set repo variable CN_DEPLOY_TARGET=custom-domain once DNS points at GitHub
+  # Pages; until then everything builds under /crystalnurse/.
+  CN_DEPLOY_TARGET: ${{ vars.CN_DEPLOY_TARGET || 'github-pages' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # @supa-media/* live on GitHub Packages (a private registry), so install
+      # needs a token — see .npmrc.
+      - name: Install
+        run: pnpm install --frozen-lockfile
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build marketing site
+        run: pnpm build:site
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./apps/site/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

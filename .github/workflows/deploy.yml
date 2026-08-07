@@ -1,48 +1,132 @@
-name: Deploy to GitHub Pages
+# Ships the backend and the admin portal on every merge to main, in that order.
+#
+# ── Why one workflow instead of two ────────────────────────────────────────
+# These used to be separate workflows, which meant they ran in parallel. A
+# merge that adds a Convex function and the portal screen that calls it would
+# race: if the portal published first, users got a portal calling a function
+# the backend didn't have yet. GitHub can't express `needs:` across workflows,
+# so the ordering has to come from being in the same one.
+#
+# ── Why no path filters ────────────────────────────────────────────────────
+# Also deliberate. Filters looked tidy but kept missing inputs: a change to the
+# root package.json, pnpm-lock.yaml or tsconfig.json affects the portal build
+# without touching apps/ops, and a data migration can be prompted by a change
+# anywhere. A workflow that didn't run is indistinguishable from one that
+# passed, so both jobs run every time — Convex no-ops when nothing changed, and
+# an EAS deploy of an identical bundle re-uploads nothing.
+#
+# The marketing site deploys separately (deploy-site.yml): it's static, calls
+# no backend, and so has no ordering relationship with any of this.
+name: Deploy
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
 concurrency:
-  group: "pages"
-  cancel-in-progress: true
+  # Never let two deploys race: the second could apply migrations against the
+  # first's half-deployed functions.
+  group: deploy-production
+  cancel-in-progress: false
 
 jobs:
-  build:
+  backend:
+    name: Backend and migrations
     runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      packages: read
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
+
+      - name: Check required secrets
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+        run: |
+          if [ -z "${CONVEX_DEPLOY_KEY:-}" ]; then
+            echo "::error::CONVEX_DEPLOY_KEY is not set in the 'production' environment."
+            echo "Get one from the Convex dashboard: Settings → Deploy keys."
+            exit 1
+          fi
+
+      # @supa-media/* come from GitHub Packages — see .npmrc.
       - name: Install
         run: pnpm install --frozen-lockfile
-      - name: Build
-        run: pnpm build
         env:
-          # Set repo variable CN_DEPLOY_TARGET=custom-domain once DNS points at
-          # GitHub Pages; until then the site builds under /crystalnurse/.
-          CN_DEPLOY_TARGET: ${{ vars.CN_DEPLOY_TARGET || 'github-pages' }}
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./dist
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  deploy:
-    needs: build
+      # Schema and functions go up FIRST. A migration that ran before them could
+      # reference a field the deployed schema doesn't have yet.
+      - name: Deploy schema and functions
+        run: npx convex deploy --yes
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+
+      # Applies anything in apps/convex/functions/migrations.ts that hasn't run.
+      # Already-applied migrations are skipped, so re-running is harmless.
+      - name: Run pending data migrations
+        run: npx convex run functions/migrations:runPending --prod
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+
+  portal:
+    name: Admin portal
+    needs: backend # the ordering this whole file exists for
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    environment: production
+    permissions:
+      contents: read
+      packages: read
     steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Check required secrets
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_PUBLIC_CONVEX_URL: ${{ secrets.EXPO_PUBLIC_CONVEX_URL }}
+        run: |
+          for name in EXPO_TOKEN EXPO_PUBLIC_CONVEX_URL; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::missing required secret '$name' in the 'production' environment."
+              exit 1
+            fi
+          done
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate Convex types
+        run: npx convex codegen
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+
+      # EXPO_PUBLIC_CONVEX_URL is baked into the bundle at build time, not read
+      # at runtime — a missing value ships a portal that can't reach the
+      # backend, with no error until someone opens it. Hence the check above.
+      - name: Build
+        run: pnpm build:ops-web
+        env:
+          EXPO_PUBLIC_CONVEX_URL: ${{ secrets.EXPO_PUBLIC_CONVEX_URL }}
+
+      - name: Deploy to EAS Hosting
+        working-directory: apps/ops
+        run: eas deploy --prod --non-interactive
