@@ -100,17 +100,22 @@ the variable, with a `production` field), add the key to
 `secrets-allowlist.json`, and run the sync. A key not on the allowlist is never
 synced.
 
-That workflow needs two tokens seeded by hand — it can't sync the credentials it
-needs in order to run:
+That workflow needs two tokens that it can't sync itself — they're the
+credentials it needs in order to run. **Both are seeded**, as
+*repository-level* secrets (not environment-scoped: the caller job binds no
+environment, so it can only read repo-level secrets):
 
-| Secret | What |
-|---|---|
-| `OP_SERVICE_ACCOUNT_TOKEN` | 1Password service account, read-only, scoped to the `Crystal` vault (1Password → Developer → Service Accounts) |
-| `GH_ADMIN_TOKEN` | GitHub PAT with repo admin scope. The built-in `GITHUB_TOKEN` cannot manage secrets — a hard limitation, not a setting |
+| Secret | What | Note |
+|---|---|---|
+| `OP_SERVICE_ACCOUNT_TOKEN` | 1Password service account, read-only, scoped to `Crystal` only | ✅ |
+| `GH_ADMIN_TOKEN` | Fine-grained PAT, `lilseyi/crystalnurse` only, **Environments: Read and write** | ✅ |
 
-Until those exist the sync can't run, which is why the four below were seeded
-directly from 1Password. Once seeded, uncomment the `push:` trigger in
-`.github/workflows/sync-secrets.yml` so allowlist changes sync themselves.
+The permission that matters on the PAT is **Environments**, not **Secrets**.
+"Secrets" governs *repository* secrets; the sync writes *environment* secrets
+(`gh secret set --env production`), which is a different permission entirely.
+Getting this wrong fails at write time with a confusing 403.
+
+Rotating either one is manual — nothing can sync them.
 
 ### Secrets — `production` environment
 
