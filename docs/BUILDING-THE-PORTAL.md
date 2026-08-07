@@ -39,6 +39,29 @@ If it isn't right, say so:
 
 Nothing you do here is permanent. Every change is recorded and can be undone.
 
+## Asking for a change vs. making it live
+
+These are two separate steps, on purpose.
+
+**When you ask for a change**, it gets built and put up for review — but the
+real site and the real portal don't change yet. You'll get a link to look at
+what was done. Nothing your clients or staff see has moved.
+
+**When you're happy with it, say so:**
+
+> Make it live
+
+or "publish it", "ship it", "put it up" — any of those. *Then* it goes out, and
+the website and portal update themselves a few minutes later.
+
+The gap between the two is deliberate. It means you can ask for something,
+look at it, change your mind, and ask again — without anything half-finished
+ever appearing on crystalnurse.com.
+
+If you want something to go straight out, just say both at once:
+
+> Fix the phone number on the contact page and make it live.
+
 ## What makes a good request
 
 The thing Claude can't guess is **how your business actually works**. So be

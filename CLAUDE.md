@@ -4,8 +4,12 @@ Instructions for Claude Code (and any other AI agent) working in this repo.
 
 ## Who you're working with
 
-The person asking is likely **not a developer**. They run a home-care agency.
-That changes how you should behave:
+**Assume the person asking is not a developer.** They run a home-care agency.
+They will not read a diff, will not know what a branch is, and should never need
+to. Requests will sound like *"update the site with these changes"*, *"add a
+page for X"*, or *"make it live"* — not like tickets.
+
+That changes how you behave:
 
 - **Explain in outcomes, not implementation.** "You'll see a Clients tab with a
   search box" beats "I added a paginated query with a by_name index."
@@ -14,9 +18,57 @@ That changes how you should behave:
   Ask only when the answer depends on how their business actually works — how
   they track something, what the statuses are, who should see it.
 - **Never leave them at a command line puzzle.** If something needs a terminal
-  command, give the exact command to paste.
+  command, give the exact command to paste, and say what it will do.
+- **Never use jargon as an answer.** No "the CI is red", "rebase onto main",
+  "the migration is pending". Say what happened and what you're doing about it.
 - **Say when something is risky** — losing data, exposing information, costing
   money — in plain words, before doing it.
+- **Don't report success you haven't checked.** "I've made the change and looked
+  at the page — it works" is worth something. "Done!" is not.
+
+## How work gets shipped — follow this every time
+
+There are two distinct moments, and they are almost never the same message:
+
+1. **"Change this"** → build it and open a pull request. Do **not** merge.
+2. **"Make it live"** → merge that pull request.
+
+Nothing reaches `crystalnurse.com` or `admin.crystalnurse.com` until step 2,
+because merging to `main` is what triggers the deploys.
+
+### When they ask for a change
+
+1. **Never commit to `main`.** Create a branch —
+   `git checkout -b <short-description>`.
+2. Make the change. Small, focused commits with messages that say *why*.
+3. **Check it yourself before showing them.** Run `pnpm typecheck`, `pnpm lint`
+   and `pnpm test`. For anything visible, actually open it — `pnpm dev` for the
+   portal, `pnpm dev:site` for the marketing site — and look at the page.
+   Turbo caches results, so a "pass" you didn't watch run may be a replayed log;
+   if something seems too fast to be real, re-run it with `--force`.
+4. Push the branch and open a pull request (`gh pr create`).
+5. **Review your own diff as if someone else wrote it.** Read every changed
+   line and ask: does this do what was asked and nothing else? Does it break
+   anything that already worked? Did I leave debugging code, a hardcoded value,
+   or a half-finished edit? Fix what you find, and push the fixes to the same
+   branch.
+6. Tell them, in plain words, what changed and what to look at. Give them the
+   pull request link and the preview link if there is one.
+
+### When they say to make it live
+
+Only then: merge the pull request to `main`. Deploys run automatically —
+backend and data migrations, the admin portal, the marketing site. Watch them
+finish (`gh run watch`), and tell them when it's actually live rather than when
+the merge went through. If a deploy fails, say so plainly and fix it.
+
+### Words that mean "make it live"
+
+"Make it live", "publish it", "ship it", "push it out", "put it up", "go ahead".
+
+If it's genuinely ambiguous, ask — one short question. **When in doubt, open the
+pull request and don't merge.** An unmerged change costs a message; a merged
+mistake is on the public site for their clients to see.
 
 ## What this repo is
 
@@ -128,8 +180,12 @@ the portal at http://localhost:8081.
 
 ## Git
 
-- Never push to `main` — branch, then open a PR.
+The full workflow is under "How work gets shipped" above — read that, it's the
+part that matters most. In short:
+
+- **Never commit or push to `main`.** Branch, then open a pull request.
 - Small, focused commits with messages that say *why*.
-- Deploys happen on merge to main: the backend and migrations via
-  `deploy-convex.yml`, the portal via `deploy-admin.yml`, the marketing site via
-  `deploy-site.yml`.
+- Merge only when they've said they want the change live.
+- Merging to `main` deploys: the backend and data migrations via
+  `deploy-convex.yml`, the admin portal via `deploy-admin.yml`, the marketing
+  site via `deploy-site.yml`.
