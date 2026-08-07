@@ -204,6 +204,26 @@ export const invite = mutation({
       .withIndex("by_email", (q) => q.eq("email", normalized))
       .unique();
     if (existing) {
+      // This form doubles as "change someone's role", including your own — so
+      // an owner picking Manager for their own address would demote themselves.
+      // If they were the only owner that is unrecoverable: managing access
+      // needs an owner, and `claimOwnership` refuses once the table is
+      // non-empty, so nobody could ever be promoted back without editing the
+      // database by hand.
+      if (existing.role === "owner" && role !== "owner") {
+        const owners = await ctx.db
+          .query("members")
+          .filter((q) => q.eq(q.field("role"), "owner"))
+          .collect();
+        if (owners.length <= 1) {
+          throw new ConvexError({
+            code: "LAST_OWNER",
+            message:
+              "This is the only owner. Make someone else an owner first, then change this role.",
+          });
+        }
+      }
+
       await ctx.db.patch(existing._id, { role: role as MemberRole, name: name ?? existing.name });
       return existing._id;
     }
