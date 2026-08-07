@@ -81,12 +81,37 @@ laptop. If sign-in codes stop arriving, this is the first thing to check.
 
 ## 5. GitHub repo secrets and variables
 
-Repo → Settings → Secrets and variables → Actions.
+**Done for the four deploy secrets** — the `production` environment exists and
+holds all of them, sourced from 1Password.
+
+### Keeping them in sync
+
+1Password is the source of truth; GitHub secrets are a buffer the deploy
+workflows read. **Never edit a secret in the GitHub UI** — they're write-only
+(you can't read one back to check it) and the next sync overwrites whatever you
+typed. Change the value in 1Password instead, then re-sync.
+
+To re-sync: Actions → **Sync secrets from 1Password** → Run workflow. It leaves
+dry-run on by default so you see the plan first.
+
+Adding a new secret is three steps: create the 1Password item (titled exactly as
+the variable, with a `production` field), add the key to
+`secrets-allowlist.json`, and run the sync. A key not on the allowlist is never
+synced.
+
+That workflow needs two tokens seeded by hand — it can't sync the credentials it
+needs in order to run:
+
+| Secret | What |
+|---|---|
+| `OP_SERVICE_ACCOUNT_TOKEN` | 1Password service account, read-only, scoped to the `Crystal` vault (1Password → Developer → Service Accounts) |
+| `GH_ADMIN_TOKEN` | GitHub PAT with repo admin scope. The built-in `GITHUB_TOKEN` cannot manage secrets — a hard limitation, not a setting |
+
+Until those exist the sync can't run, which is why the four below were seeded
+directly from 1Password. Once seeded, uncomment the `push:` trigger in
+`.github/workflows/sync-secrets.yml` so allowlist changes sync themselves.
 
 ### Secrets — `production` environment
-
-Create the environment first (Settings → Environments → New → `production`).
-The three deploy workflows run with `environment: production` and read these.
 
 | Secret | Value | Used by |
 |---|---|---|
