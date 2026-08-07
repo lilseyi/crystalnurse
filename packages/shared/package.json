@@ -1,0 +1,16 @@
+{
+  "name": "@crystalcare/shared",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "convex": "^1.31.3"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.2"
+  }
+}

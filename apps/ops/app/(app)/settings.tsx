@@ -1,0 +1,2 @@
+/** Route: /settings */
+export { SettingsScreen as default } from "../../features/settings/SettingsScreen";

@@ -1,0 +1,90 @@
+# Publishes the admin portal to https://admin.crystalnurse.com on every merge to
+# main.
+#
+# Hosted on Cloudflare Pages rather than GitHub Pages because a repo only gets
+# one Pages site, and that one is already the public marketing site at
+# crystalnurse.com (see deploy-site.yml).
+#
+# ── One-time setup ─────────────────────────────────────────────────────────
+#  1. Cloudflare dashboard → Workers & Pages → Create → Pages → "Direct upload",
+#     name it `crystalcare-admin`.
+#  2. Repo secrets (Settings → Environments → production):
+#       CLOUDFLARE_API_TOKEN     — token with the "Cloudflare Pages: Edit" permission
+#       CLOUDFLARE_ACCOUNT_ID    — from any Cloudflare dashboard URL
+#       EXPO_PUBLIC_CONVEX_URL   — the production Convex URL (.convex.cloud)
+#  3. In the Pages project → Custom domains → add `admin.crystalnurse.com`.
+#     Cloudflare gives you a CNAME target; add that CNAME in Google Cloud DNS,
+#     where crystalnurse.com is managed. The certificate issues automatically.
+# ───────────────────────────────────────────────────────────────────────────
+name: Deploy admin portal
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/ops/**"
+      - "packages/shared/**"
+      - "apps/convex/**" # generated API types the portal compiles against
+      - "pnpm-lock.yaml"
+      - ".github/workflows/deploy-admin.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-admin-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Check required secrets
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          EXPO_PUBLIC_CONVEX_URL: ${{ secrets.EXPO_PUBLIC_CONVEX_URL }}
+        run: |
+          for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID EXPO_PUBLIC_CONVEX_URL; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::missing required secret '$name' in the 'production' environment."
+              exit 1
+            fi
+          done
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # The portal imports Convex's generated API types, which aren't committed.
+      - name: Generate Convex types
+        run: npx convex codegen
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+
+      # EXPO_PUBLIC_CONVEX_URL is baked into the bundle at build time, not read
+      # at runtime — a missing value here ships a portal that can't reach the
+      # backend, with no error until someone opens it.
+      - name: Build
+        run: pnpm build:ops-web
+        env:
+          EXPO_PUBLIC_CONVEX_URL: ${{ secrets.EXPO_PUBLIC_CONVEX_URL }}
+
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy apps/ops/dist --project-name=crystalcare-admin --branch=main
