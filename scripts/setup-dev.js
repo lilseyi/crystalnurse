@@ -22,7 +22,7 @@
  * rows and simply refresh against the new key. In practice you stay signed in.
  */
 
-const { execFileSync } = require("node:child_process");
+const { spawnSync } = require("node:child_process");
 const { existsSync, readFileSync } = require("node:fs");
 const { generateKeyPairSync } = require("node:crypto");
 const { join } = require("node:path");
@@ -31,13 +31,49 @@ const ROOT = join(__dirname, "..");
 const LOCAL_ENV = join(ROOT, ".env.local");
 const SITE_URL = process.env.SITE_URL ?? "http://localhost:8081";
 
-function convexEnvSet(name, value) {
+/**
+ * The Convex CLI picks its target deployment from the environment BEFORE it
+ * looks at .env.local. So an exported CONVEX_DEPLOY_KEY or CONVEX_DEPLOYMENT —
+ * left over from deploying production, say — silently wins over the file this
+ * script validated, and the guard below would be checking one deployment while
+ * writing to another. Given what this script sets, that means turning the
+ * `000000` sign-in bypass on in production.
+ *
+ * Stripping both selectors from the child environment forces the CLI to resolve
+ * from .env.local: the same source the guard checked.
+ */
+const CHILD_ENV = { ...process.env };
+delete CHILD_ENV.CONVEX_DEPLOY_KEY;
+delete CHILD_ENV.CONVEX_DEPLOYMENT;
+
+function convexEnvSet(name, value, expectedDeployment) {
   // `--` stops the CLI reading a value starting with "-" as a flag, which is
   // exactly what a PEM private key looks like.
-  execFileSync("npx", ["convex", "env", "set", "--", name, value], {
+  const result = spawnSync("npx", ["convex", "env", "set", "--", name, value], {
     cwd: ROOT,
-    stdio: ["ignore", "ignore", "inherit"],
+    env: CHILD_ENV,
+    encoding: "utf-8",
   });
+
+  // The CLI confirms which deployment it wrote to on STDERR, not stdout —
+  // "Successfully set X (on dev deployment <name>)". Read both so this check
+  // doesn't depend on which stream it happens to use.
+  const output = `${result.stdout ?? ""}${result.stderr ?? ""}`;
+
+  if (result.status !== 0) {
+    console.error(`\nConvex rejected \`env set ${name}\`:\n${output.trim()}`);
+    process.exit(1);
+  }
+
+  // Belt and braces: confirm it wrote where we validated, rather than trusting
+  // that stripping the environment was sufficient.
+  if (!output.includes(expectedDeployment)) {
+    console.error(
+      `\nStopping: expected to write to "${expectedDeployment}", but Convex reported:\n  ${output.trim() || "(no deployment named in its output)"}`,
+    );
+    process.exit(1);
+  }
+
   console.log(`  set ${name}`);
 }
 
@@ -72,7 +108,14 @@ if (!/^(dev|local):/.test(deployment.trim())) {
   process.exit(1);
 }
 
-console.log(`Configuring ${deployment.trim().split("#")[0].trim()}\n`);
+// e.g. "dev:formal-mastiff-577 # team: ..." → "formal-mastiff-577"
+const DEPLOYMENT_NAME = deployment.trim().split("#")[0].trim().split(":")[1] ?? "";
+if (!DEPLOYMENT_NAME) {
+  console.error(`Couldn't read a deployment name from "${deployment.trim()}".`);
+  process.exit(1);
+}
+
+console.log(`Configuring ${DEPLOYMENT_NAME}\n`);
 
 // ── Signing keys ──────────────────────────────────────────────────────────
 // RS256, which is what @convex-dev/auth verifies with. Newlines are collapsed
@@ -86,21 +129,23 @@ convexEnvSet(
   "JWT_PRIVATE_KEY",
   privateKey.export({ type: "pkcs8", format: "pem" }).toString().trimEnd()
     .replace(/\n/g, " "),
+  DEPLOYMENT_NAME,
 );
 convexEnvSet(
   "JWKS",
   JSON.stringify({
     keys: [{ use: "sig", alg: "RS256", ...publicKey.export({ format: "jwk" }) }],
   }),
+  DEPLOYMENT_NAME,
 );
 
 // Where sign-in links point back to.
-convexEnvSet("SITE_URL", SITE_URL);
+convexEnvSet("SITE_URL", SITE_URL, DEPLOYMENT_NAME);
 
 // With this on, the sign-in code is always 000000 and no email is sent — so no
 // Resend account is needed to work on this locally. Production refuses to
 // honour it regardless (see `productionIdentifier` in apps/convex/auth.ts).
-convexEnvSet("DEV_OTP_BYPASS", "true");
+convexEnvSet("DEV_OTP_BYPASS", "true", DEPLOYMENT_NAME);
 
 console.log(`
 Done. Your development backend is ready.
