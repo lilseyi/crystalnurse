@@ -39,12 +39,25 @@ const SITE_URL = process.env.SITE_URL ?? "http://localhost:8081";
  * writing to another. Given what this script sets, that means turning the
  * `000000` sign-in bypass on in production.
  *
- * Stripping both selectors from the child environment forces the CLI to resolve
+ * Stripping the selectors from the child environment forces the CLI to resolve
  * from .env.local: the same source the guard checked.
+ *
+ * This list is what's known today, so `convexEnvSet` also verifies after each
+ * write that Convex reported the deployment we expected — that check doesn't
+ * depend on having enumerated every selector correctly.
  */
 const CHILD_ENV = { ...process.env };
-delete CHILD_ENV.CONVEX_DEPLOY_KEY;
-delete CHILD_ENV.CONVEX_DEPLOYMENT;
+for (const selector of [
+  "CONVEX_DEPLOY_KEY",
+  "CONVEX_DEPLOYMENT",
+  // Self-hosted backends are selected by their own pair, and they override just
+  // the same. Nothing here uses one, but the cost of covering it is a line and
+  // the failure is identical.
+  "CONVEX_SELF_HOSTED_URL",
+  "CONVEX_SELF_HOSTED_ADMIN_KEY",
+]) {
+  delete CHILD_ENV[selector];
+}
 
 function convexEnvSet(name, value, expectedDeployment) {
   // `--` stops the CLI reading a value starting with "-" as a flag, which is
