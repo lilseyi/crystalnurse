@@ -37,18 +37,29 @@ Built on the [Supa Framework](https://github.com/Supa-Media/supa-framework)
 
 ## Running it locally
 
-Needs Node 22+, pnpm 9+, and access to the private `@supa-media/*` registry
-(a GitHub token with `read:packages` — see `.npmrc`).
+Needs Node 22+ and pnpm 9+. Nothing else — no shared credentials, no access to
+anyone else's Convex account, no 1Password.
 
 ```bash
+# GitHub Packages needs a token even for public packages, which is where
+# @supa-media/* live. Any GitHub account's token works; it grants nothing.
+gh auth login
+gh auth refresh -s read:packages
+export GITHUB_TOKEN=$(gh auth token)
+
 pnpm install
-npx convex dev            # first run: creates your own backend, writes .env.local
-pnpm dev                  # backend + portal together → http://localhost:8081
-pnpm dev:site             # the marketing site → http://localhost:4321
+npx convex dev     # creates YOUR OWN backend (any Convex account) — leave running
+pnpm setup:dev     # configures it: signing keys, and code 000000 for sign-in
+pnpm dev           # → http://localhost:8081
+pnpm dev:site      # the marketing site → http://localhost:4321
 ```
 
-First sign-in: with no owner yet, the portal offers to let you claim it. After
-that it's invite-only.
+Sign in with any `@crystalnurse.com` address and the code `000000`. Your backend
+starts empty, so you'll be offered ownership — after that it's invite-only.
+
+`pnpm setup:dev` refuses to run against production, since it turns on the
+sign-in bypass. Production ignores that bypass regardless — see
+`productionIdentifier` in `apps/convex/auth.ts`.
 
 | Command | What it does |
 |---|---|
