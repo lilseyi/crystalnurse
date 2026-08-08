@@ -16,8 +16,14 @@
  * Follows the Supa 1Password convention: one item per environment variable,
  * titled exactly as the variable, with `dev` / `production` fields.
  *
- * Safe to re-run: an item that already exists is left completely alone, because
- * replacing these keys signs everyone out.
+ * Safe to re-run: an item that already exists is left completely alone.
+ *
+ * Not because rotating signs everyone out — it doesn't. Sessions are backed by
+ * database rows and refresh against whatever key is current, so a rotation is
+ * invisible to anyone already signed in. The danger is subtler: the private key
+ * in 1Password and the one on the deployment have to stay the same key. Write a
+ * new pair here without pushing it, or push without updating here, and every
+ * sign-in fails verification with nothing to indicate why.
  */
 
 const { execFileSync } = require("node:child_process");
@@ -104,7 +110,8 @@ function main() {
   if (hasPrivate && hasJwks) {
     console.log(
       `JWT_PRIVATE_KEY and JWKS already exist in the "${VAULT}" vault — leaving them alone.\n` +
-        "Replacing these keys signs everyone out, so this script never overwrites.",
+        "Overwriting risks 1Password and the deployment holding different keys,\n" +
+        "which breaks every sign-in, so this script never replaces them.",
     );
     return;
   }
@@ -117,13 +124,14 @@ function main() {
   // JWKS is the public half of JWT_PRIVATE_KEY, so a missing JWKS can be
   // rebuilt from the key that survived. The reverse is not true: a private key
   // cannot be recovered from its public half, and inventing a new pair would
-  // invalidate every existing session.
+  // break verification against every token already issued.
   if (hasPrivate !== hasJwks) {
     if (hasJwks && !hasPrivate) {
       console.error(
         `Only JWKS exists in the "${VAULT}" vault — the private key it belongs to is gone.\n` +
           "It can't be recovered from the public half. Delete the JWKS item and re-run\n" +
-          "this script to generate a fresh pair. Everyone signed in will be signed out.",
+          "this script to generate a fresh pair, then `pnpm push:secrets` so the\n" +
+          "deployment gets the matching key.",
       );
       process.exit(1);
     }

@@ -60,7 +60,10 @@ Already done — `pnpm setup:auth-keys` generated them into 1Password as
 production**. Sharing one pair across environments would let a session minted
 against the dev backend be accepted by production.
 
-Never regenerate these. Replacing them signs everyone out.
+Don't regenerate these casually. Rotating won't sign anyone out — sessions are
+database rows and refresh against the current key — but if 1Password and the
+deployment end up with different keys, every sign-in fails verification and
+nothing says why. If you do rotate, `pnpm push:secrets` immediately.
 
 ## 4. Push the secrets to Convex — done
 

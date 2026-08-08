@@ -108,8 +108,11 @@ environment from the *deployment*, not from your laptop — a value sitting in
 `.env.local` has not reached the backend. If sign-in codes stop arriving, check
 this first.
 
-`setup:auth-keys` refuses to overwrite an existing key on purpose: replacing the
-signing keys signs everyone out.
+`setup:auth-keys` refuses to overwrite an existing key on purpose — though not
+for the reason you might expect. Rotating them does *not* sign anyone out:
+sessions are database rows and refresh against whatever key is current. The risk
+is that 1Password and the deployment end up holding *different* keys, and then
+every sign-in fails verification with nothing to say why.
 
 ## Rotating a key
 

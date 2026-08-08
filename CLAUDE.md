@@ -163,6 +163,24 @@ and breaks native rendering in ways CI can't see. Keep new dependencies out
 unless there's no alternative; the UI kit in `components/ui.tsx` is
 dependency-free for this reason.
 
+## Getting a new machine running
+
+Everything needed is self-serve — do NOT send anyone to 1Password or ask for
+access to another person's Convex account. Those hold production credentials and
+have nothing to do with local development.
+
+```bash
+gh auth login && gh auth refresh -s read:packages
+export GITHUB_TOKEN=$(gh auth token)   # GitHub Packages needs a token even for public packages
+pnpm install
+npx convex dev                          # creates their own backend, any Convex account
+pnpm setup:dev                          # signing keys + sign-in code 000000
+pnpm dev
+```
+
+If they hit a 401 from `npm.pkg.github.com`, it's the missing token — that's the
+one step with an error that doesn't explain itself.
+
 ## Verifying your work
 
 Convex's generated types don't exist until a deployment is configured, so
